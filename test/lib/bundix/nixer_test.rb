@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
-require 'minitest/autorun'
-require 'bundix'
+require_relative '../../test_helper'
 
-class TestNixer < Minitest::Test
+class TestNixer < UnitTest
   def test_object2nix_hash
-    assert_equal("{\n  a = \"x\";\n  b = \"7\";\n}", Bundix::Nixer.new({ a: 'x', b: '7' }).serialize)
+    assert_equal("{\n  a = \"x\";\n  b = \"7\";\n}",
+                 Bundix::Nixer.new({ a: 'x', b: '7' }).serialize)
   end
 
   def test_object2nix_array

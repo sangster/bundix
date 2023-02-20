@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
-require 'minitest/autorun'
+require_relative '../../test_helper'
 require 'bundix/commandline'
 
-class CommandLineTest < Minitest::Test
+class CommandLineTest < UnitTest
   def setup
     @cli = Bundix::CommandLine.new
     @cli.options = {

@@ -1,9 +1,8 @@
 # frozen_string_literal: true
 
-require 'minitest/autorun'
-require 'bundix'
+require_relative '../../test_helper'
 
-class TestShellNixContext < Minitest::Test
+class TestShellNixContext < UnitTest
   def test_commandline_populates_context
     @cli = Bundix::CommandLine.new
     context = @cli.shell_nix_context
