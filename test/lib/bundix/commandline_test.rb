@@ -16,7 +16,7 @@ class CommandLineTest < UnitTest
   end
 
   def test_shell_nix
-    assert_equal(@cli.shell_nix_string, <<~SHELLNIX)
+    assert_equal(<<~SHELLNIX, @cli.shell_nix_string)
       with (import <nixpkgs> {});
       let
         env = bundlerEnv {

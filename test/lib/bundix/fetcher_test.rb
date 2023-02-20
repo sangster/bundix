@@ -20,7 +20,7 @@ module Bundix
           end
 
           assert_includes(@request, "Authorization: Basic #{Base64.encode64('secret:').chomp}")
-          assert_equal(File.read(file), 'ok')
+          assert_equal('ok', File.read(file))
           assert_empty(out)
           assert_match(/^Downloading .* from http.*$/, err)
         end
@@ -39,7 +39,7 @@ module Bundix
           end
 
           refute_includes(@request, 'Authorization:')
-          assert_equal(File.read(file), 'ok')
+          assert_equal('ok', File.read(file))
           assert_empty(out)
           assert_match(/^Downloading .* from http.*$/, err)
         end
