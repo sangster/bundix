@@ -1,5 +1,5 @@
 # frozen_string_literal: true
 
-class Bundix
+module Bundix
   VERSION = '2.5.0'
 end

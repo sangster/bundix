@@ -1,10 +1,12 @@
+# frozen_string_literal: true
+
 require 'minitest/autorun'
 require 'bundix'
 require 'socket'
 require 'tmpdir'
 require 'base64'
 
-class Bundix
+module Bundix
   class FetcherTest < MiniTest::Test
     def test_download_with_credentials
       with_dir(bundler_credential: 'secret') do |dir|
@@ -36,13 +38,14 @@ class Bundix
             Bundix::Fetcher.new.download(file, "http://127.0.0.1:#{port}/test")
           end
 
-          refute_includes(@request, "Authorization:")
+          refute_includes(@request, 'Authorization:')
           assert_equal(File.read(file), 'ok')
           assert_empty(out)
           assert_match(/^Downloading .* from http.*$/, err)
         end
       end
     end
+
     private
 
     def with_dir(bundler_credential:)
@@ -65,7 +68,7 @@ class Bundix
       server = TCPServer.new('127.0.0.1', 0)
       port_num = server.addr[1]
 
-      @request = ''
+      @request = String.new
 
       Thread.abort_on_exception = true
       thr = Thread.new do
@@ -79,7 +82,7 @@ class Bundix
           "Content-Length: #{returning_content.length}\r\n" \
           "Content-Type: text/plain\r\n" \
           "\r\n" \
-          "#{returning_content}",
+          "#{returning_content}"
         )
 
         conn.close

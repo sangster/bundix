@@ -5,15 +5,15 @@ require 'erb'
 class Hash
   # regretfully, duckpunching
   def <=>(other)
-    if other.is_a?(Hash)
-      larray = to_a.sort { |l, r| Bundix::Nixer.order(l, r) }
-      rarray = other.to_a.sort { |l, r| Bundix::Nixer.order(l, r) }
-      larray <=> rarray
-    end
+    return unless other.is_a?(Hash)
+
+    larray = to_a.sort { |l, r| Bundix::Nixer.order(l, r) }
+    rarray = other.to_a.sort { |l, r| Bundix::Nixer.order(l, r) }
+    larray <=> rarray
   end
 end
 
-class Bundix
+module Bundix
   class Nixer
     class << self
       def serialize(obj)
@@ -28,11 +28,9 @@ class Bundix
 
         if left.is_a?(right.class) && left.respond_to?(:<=>)
           cmp = right <=> left
-          if cmp.nil?
-            return class_order(left, right)
-          else
-            return cmp
-          end
+          return class_order(left, right) if cmp.nil?
+
+          return cmp
         end
 
         class_order(left, right)

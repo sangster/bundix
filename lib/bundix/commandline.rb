@@ -9,7 +9,7 @@ require 'pathname'
 require_relative '../bundix'
 require_relative 'shell_nix_context'
 
-class Bundix
+module Bundix
   class CommandLine
     DEFAULT_OPTIONS = {
       ruby: 'ruby',
@@ -101,18 +101,17 @@ class Bundix
     def handle_magic
       ENV['BUNDLE_GEMFILE'] = options[:gemfile]
 
-      if options[:magic]
-        raise unless system(
-          Bundix::NIX_SHELL, '-p', options[:ruby],
-          "bundler.override { ruby = #{options[:ruby]}; }",
-          '--command', "bundle lock --lockfile=#{options[:lockfile]}"
-        )
-        raise unless system(
-          Bundix::NIX_SHELL, '-p', options[:ruby],
-          "bundler.override { ruby = #{options[:ruby]}; }",
-          '--command', "bundle pack --all --path #{options[:bundle_pack_path]}"
-        )
-      end
+      return unless options[:magic]
+      raise unless system(
+        Bundix::NIX_SHELL, '-p', options[:ruby],
+        "bundler.override { ruby = #{options[:ruby]}; }",
+        '--command', "bundle lock --lockfile=#{options[:lockfile]}"
+      )
+      raise unless system(
+        Bundix::NIX_SHELL, '-p', options[:ruby],
+        "bundler.override { ruby = #{options[:ruby]}; }",
+        '--command', "bundle pack --all --path #{options[:bundle_pack_path]}"
+      )
     end
 
     def shell_nix_context
@@ -125,32 +124,32 @@ class Bundix
     end
 
     def handle_init
-      if options[:init]
-        if File.file?('shell.nix')
-          warn "won't override existing shell.nix but here is what it'd look like:"
-          puts shell_nix_string
-        else
-          File.write('shell.nix', shell_nix_string)
-        end
+      return unless options[:init]
+
+      if File.file?('shell.nix')
+        warn "won't override existing shell.nix but here is what it'd look like:"
+        puts shell_nix_string
+      else
+        File.write('shell.nix', shell_nix_string)
       end
     end
 
     def handle_lock
-      if options[:lock]
-        lock = !File.file?(options[:lockfile])
-        lock ||= File.mtime(options[:gemfile]) > File.mtime(options[:lockfile])
-        if lock
-          ENV.delete('BUNDLE_PATH')
-          ENV.delete('BUNDLE_FROZEN')
-          ENV.delete('BUNDLE_BIN_PATH')
-          system('bundle', 'lock')
-          raise 'bundle lock failed' unless $CHILD_STATUS.success?
-        end
-      end
+      return unless options[:lock]
+
+      lock = !File.file?(options[:lockfile])
+      lock ||= File.mtime(options[:gemfile]) > File.mtime(options[:lockfile])
+      return unless lock
+
+      ENV.delete('BUNDLE_PATH')
+      ENV.delete('BUNDLE_FROZEN')
+      ENV.delete('BUNDLE_BIN_PATH')
+      system('bundle', 'lock')
+      raise 'bundle lock failed' unless $CHILD_STATUS.success?
     end
 
     def build_gemset
-      Bundix.new(options).convert
+      App.new(options).convert
     end
 
     def object2nix(obj)

@@ -2,9 +2,10 @@ AllCops:
   NewCops: enable
 
   Include:
-    - 'lib/**/*.rb'
-    - 'bundix.gemspec'
     - 'Gemfile'
     - 'Rakefile'
+    - 'bundix.gemspec'
+    - 'lib/**/*.rb'
+    - 'test/**/*.rb'
   Exclude:
     - 'vendor/**/*'

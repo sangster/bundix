@@ -12,4 +12,4 @@ namespace :lint do
   RuboCop::RakeTask.new
 end
 
-task default: %i[test lint]
+task default: %i[test lint:rubocop]

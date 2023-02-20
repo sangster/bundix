@@ -22,4 +22,5 @@ Gem::Specification.new do |s|
   s.add_dependency 'bundler', '~> 2.4'
   s.add_development_dependency 'rubocop', '~> 1.45'
   s.add_development_dependency 'rubocop-minitest', '~> 0.28'
+  s.add_development_dependency 'pry-byebug', '~> 3.10'
 end
