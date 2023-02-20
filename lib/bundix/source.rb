@@ -1,7 +1,9 @@
+# frozen_string_literal: true
+
 class Bundix
   class Fetcher
-    def sh(*args, &block)
-      Bundix.sh(*args, &block)
+    def sh(...)
+      Bundix.sh(...)
     end
 
     def download(file, url)
@@ -12,15 +14,11 @@ class Bundix
       when nil # local file path
         FileUtils.cp(url, file)
       when 'http', 'https'
-        unless uri.user
-          inject_credentials_from_bundler_settings(uri)
-        end
+        inject_credentials_from_bundler_settings(uri) unless uri.user
 
         Net::HTTP.start(uri.host, uri.port, use_ssl: (uri.scheme == 'https')) do |http|
           request = Net::HTTP::Get.new(uri)
-          if uri.user
-            request.basic_auth(uri.user, uri.password)
-          end
+          request.basic_auth(uri.user, uri.password) if uri.user
 
           http.request(request) do |resp|
             case resp
@@ -37,12 +35,12 @@ class Bundix
           end
         end
       else
-        raise "Unsupported URL scheme"
+        raise 'Unsupported URL scheme'
       end
     end
 
     def inject_credentials_from_bundler_settings(uri)
-      @bundler_settings ||= Bundler::Settings.new(Bundler.root + '.bundle')
+      @bundler_settings ||= Bundler::Settings.new("#{Bundler.root}.bundle")
 
       if val = @bundler_settings[uri.host]
         uri.user, uri.password = val.split(':', 2)
@@ -51,19 +49,19 @@ class Bundix
 
     def debrief_access_denied(host)
       print_error(
-        "Authentication is required for #{host}.\n" +
-        "Please supply credentials for this source. You can do this by running:\n" +
-        " bundle config packages.shopify.io username:password"
+        "Authentication is required for #{host}.\n" \
+        "Please supply credentials for this source. You can do this by running:\n " \
+        'bundle config packages.shopify.io username:password'
       )
     end
 
     def print_error(msg)
       msg = "\x1b[31m#{msg}\x1b[0m" if $stdout.tty?
-      STDERR.puts(msg)
+      warn(msg)
     end
 
     def nix_prefetch_url(url)
-      dir = File.join(ENV['XDG_CACHE_HOME'] || "#{ENV['HOME']}/.cache", 'bundix')
+      dir = File.join(ENV['XDG_CACHE_HOME'] || "#{Dir.home}/.cache", 'bundix')
       FileUtils.mkdir_p dir
       file = File.join(dir, url.gsub(/[^\w-]+/, '_'))
 
@@ -74,15 +72,15 @@ class Bundix
         Bundix::NIX_PREFETCH_URL,
         '--type', 'sha256',
         '--name', File.basename(url), # --name mygem-1.2.3.gem
-        "file://#{file}",             # file:///.../https_rubygems_org_gems_mygem-1_2_3_gem
+        "file://#{file}"              # file:///.../https_rubygems_org_gems_mygem-1_2_3_gem
       ).force_encoding('UTF-8').strip
-    rescue => ex
-      STDERR.puts(ex.full_message)
+    rescue StandardError => e
+      warn(e.full_message)
       nil
     end
 
     def nix_prefetch_git(uri, revision, submodules: false)
-      home = ENV['HOME']
+      home = Dir.home
       ENV['HOME'] = '/homeless-shelter'
 
       args = []
@@ -104,6 +102,7 @@ class Bundix
       spec.source.caches.each do |cache|
         path = File.join(cache, "#{spec.full_name}.gem")
         next unless File.file?(path)
+
         hash = nix_prefetch_url(path)&.[](SHA256_32)
         return format_hash(hash) if hash
       end
@@ -124,15 +123,16 @@ class Bundix
       uri = "#{remote}/gems/#{spec.full_name}.gem"
       result = nix_prefetch_url(uri)
       return unless result
+
       result[SHA256_32]
-    rescue => e
+    rescue StandardError => e
       puts "ignoring error during fetching: #{e}"
       puts e.backtrace
       nil
     end
   end
 
-  class Source < Struct.new(:spec, :fetcher)
+  Source = Struct.new(:spec, :fetcher) do
     def convert
       case spec.source
       when Bundler::Source::Rubygems
@@ -143,22 +143,23 @@ class Bundix
         convert_path
       else
         pp spec
-        fail 'unknown bundler source'
+        raise 'unknown bundler source'
       end
     end
 
     def convert_path
       {
-        type: "path",
+        type: 'path',
         path: spec.source.path
       }
     end
 
     def convert_rubygems
-      remotes = spec.source.remotes.map{|remote| remote.to_s.sub(/\/+$/, '') }
+      remotes = spec.source.remotes.map { |remote| remote.to_s.sub(%r{/+$}, '') }
       hash = fetcher.fetch_local_hash(spec)
       remote, hash = fetcher.fetch_remotes_hash(spec, remotes) unless hash
-      fail "couldn't fetch hash for #{spec.full_name}" unless hash
+      raise "couldn't fetch hash for #{spec.full_name}" unless hash
+
       puts "#{hash} => #{spec.full_name}.gem" if $VERBOSE
 
       { type: 'gem',
@@ -169,11 +170,12 @@ class Bundix
     def convert_git
       revision = spec.source.options.fetch('revision')
       uri = spec.source.options.fetch('uri')
-      submodules = !!spec.source.submodules
+      submodules = !spec.source.submodules.nil?
       output = fetcher.nix_prefetch_git(uri, revision, submodules: submodules)
       # FIXME: this is a hack, we should separate $stdout/$stderr in the sh call
       hash = JSON.parse(output[/({[^}]+})\s*\z/m])['sha256']
-      fail "couldn't fetch hash for #{spec.full_name}" unless hash
+      raise "couldn't fetch hash for #{spec.full_name}" unless hash
+
       puts "#{hash} => #{uri}" if $VERBOSE
 
       { type: 'git',

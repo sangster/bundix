@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require_relative 'lib/bundix/version'
 
 Gem::Specification.new do |s|
@@ -13,5 +15,11 @@ Gem::Specification.new do |s|
                   Dir['template/**/*.{rb,nix,erb}']
   s.bindir      = 'bin'
   s.executables = ['bundix']
-  s.add_runtime_dependency 'bundler', '>= 1.11'
+  s.required_ruby_version = '>= 2.7.0'
+
+  s.metadata['rubygems_mfa_required'] = 'true'
+
+  s.add_dependency 'bundler', '~> 2.4'
+  s.add_development_dependency 'rubocop', '~> 1.45'
+  s.add_development_dependency 'rubocop-minitest', '~> 0.28'
 end

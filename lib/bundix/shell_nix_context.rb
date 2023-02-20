@@ -1,5 +1,7 @@
+# frozen_string_literal: true
+
 class Bundix
-  class ShellNixContext < Struct.new(:project, :ruby, :gemfile, :lockfile, :gemset)
+  ShellNixContext = Struct.new(:project, :ruby, :gemfile, :lockfile, :gemset) do
     def self.from_hash(hash)
       new(*hash.values_at(*members))
     end

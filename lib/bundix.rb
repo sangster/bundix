@@ -1,10 +1,10 @@
+# frozen_string_literal: true
+
 require 'bundler'
 require 'fileutils'
 require 'json'
 require 'net/http'
 require 'open3'
-require 'pp'
-
 require_relative 'bundix/version'
 require_relative 'bundix/source'
 require_relative 'bundix/nixer'
@@ -16,14 +16,36 @@ class Bundix
   NIX_HASH = 'nix-hash'
   NIX_SHELL = 'nix-shell'
 
-  SHA256_32 = %r(^[a-z0-9]{52}$)
+  SHA256_32 = /^[a-z0-9]{52}$/.freeze
+
+  PLATFORM_ENGINES = {
+    'ruby' => [{ engine: 'ruby' }, { engine: 'rbx' }, { engine: 'maglev' }],
+    'mri' => [{ engine: 'ruby' }, { engine: 'maglev' }],
+    'rbx' => [{ engine: 'rbx' }],
+    'jruby' => [{ engine: 'jruby' }],
+    'mswin' => [{ engine: 'mswin' }],
+    'mswin64' => [{ engine: 'mswin64' }],
+    'mingw' => [{ engine: 'mingw' }],
+    'truffleruby' => [{ engine: 'ruby' }],
+    'x64_mingw' => [{ engine: 'mingw' }]
+  }.freeze
+  SUPPORTED_RUBY_VERSIONS = %w[1.8 1.9 2.0 2.1 2.2 2.3 2.4 2.5 2.6 2.7].freeze
+  PLATFORM_VERSION_ENGINES = PLATFORM_ENGINES.flat_map do |name, list|
+    SUPPORTED_RUBY_VERSIONS.map do |version|
+      [
+        "#{name}_#{version.sub(/[.]/, '')}",
+        list.map { |platform| platform.merge(version: version) }
+      ]
+    end
+  end.to_h.freeze
+  PLATFORM_MAPPING = PLATFORM_ENGINES.merge(PLATFORM_VERSION_ENGINES).freeze
 
   attr_reader :options
 
   attr_accessor :fetcher
 
   class Dependency < Bundler::Dependency
-    def initialize(name, version, options={}, &blk)
+    def initialize(name, version, options = {}, &blk)
       super(name, version, options, &blk)
       @bundix_version = version
     end
@@ -46,35 +68,12 @@ class Bundix
       gem = find_cached_spec(spec, cache) || convert_spec(spec, cache, dep_cache)
       gems.merge!(gem)
 
-      if spec.dependencies.any?
-        gems[spec.name]['dependencies'] = spec.dependencies.map(&:name) - ['bundler']
-      end
+      gems[spec.name]['dependencies'] = spec.dependencies.map(&:name) - ['bundler'] if spec.dependencies.any?
     end
   end
 
   def groups(spec, dep_cache)
-    {groups: dep_cache.fetch(spec.name).groups}
-  end
-
-  PLATFORM_MAPPING = {}
-
-  {
-    "ruby" => [{engine: "ruby"}, {engine:"rbx"}, {engine:"maglev"}],
-    "mri" => [{engine: "ruby"}, {engine: "maglev"}],
-    "rbx" => [{engine: "rbx"}],
-    "jruby" => [{engine: "jruby"}],
-    "mswin" => [{engine: "mswin"}],
-    "mswin64" => [{engine: "mswin64"}],
-    "mingw" => [{engine: "mingw"}],
-    "truffleruby" => [{engine: "ruby"}],
-    "x64_mingw" => [{engine: "mingw"}],
-  }.each do |name, list|
-    PLATFORM_MAPPING[name] = list
-    %w(1.8 1.9 2.0 2.1 2.2 2.3 2.4 2.5 2.6).each do |version|
-      PLATFORM_MAPPING["#{name}_#{version.sub(/[.]/,'')}"] = list.map do |platform|
-        platform.merge(:version => version)
-      end
-    end
+    { groups: dep_cache.fetch(spec.name).groups }
   end
 
   def platforms(spec, dep_cache)
@@ -83,40 +82,42 @@ class Bundix
       PLATFORM_MAPPING[platform_name.to_s]
     end.flatten
 
-    {platforms: platforms}
+    { platforms: platforms }
   end
 
-  def convert_spec(spec, cache, dep_cache)
+  def convert_spec(spec, _cache, dep_cache)
     {
       spec.name => {
         version: spec.version.to_s,
         source: Source.new(spec, fetcher).convert
       }.merge(platforms(spec, dep_cache)).merge(groups(spec, dep_cache))
     }
-  rescue => ex
-    warn "Skipping #{spec.name}: #{ex}"
-    puts ex.backtrace
-    {spec.name => {}}
+  rescue StandardError => e
+    warn "Skipping #{spec.name}: #{e}"
+    puts e.backtrace
+    { spec.name => {} }
   end
 
   def find_cached_spec(spec, cache)
-    name, cached = cache.find{|k, v|
+    name, cached = cache.find do |k, v|
       next unless k == spec.name
-      next unless cached_source = v['source']
+      next unless (cached_source = v['source'])
 
       case spec_source = spec.source
       when Bundler::Source::Git
         next unless cached_source['type'] == 'git'
-        next unless cached_rev = cached_source['rev']
-        next unless spec_rev = spec_source.options['revision']
+        next unless (cached_rev = cached_source['rev'])
+        next unless (spec_rev = spec_source.options['revision'])
+
         spec_rev == cached_rev
       when Bundler::Source::Rubygems
         next unless cached_source['type'] == 'gem'
+
         v['version'] == spec.version.to_s
       end
-    }
+    end
 
-    {name => cached} if cached
+    { name => cached } if cached
   end
 
   def build_depcache(lock)
@@ -131,41 +132,44 @@ class Bundix
       dep_cache[spec.name] ||= Dependency.new(spec.name, nil, {})
     end
 
-    begin
+    loop do
       changed = false
       lock.specs.each do |spec|
         as_dep = dep_cache.fetch(spec.name)
 
         spec.dependencies.each do |dep|
           cached = dep_cache.fetch(dep.name) do |name|
-            if name != "bundler"
-              raise KeyError, "Gem dependency '#{name}' not specified in #{lockfile}"
-            end
+            raise KeyError, "Gem dependency '#{name}' not specified in #{lockfile}" if name != 'bundler'
+
             dep_cache[name] = Dependency.new(name, lock.bundler_version, {})
           end
 
-          if !((as_dep.groups - cached.groups) - [:default]).empty? or !(as_dep.platforms - cached.platforms).empty?
-            changed = true
-            dep_cache[cached.name] = (Dependency.new(cached.name, nil, {
-              "group" => as_dep.groups | cached.groups,
-              "platforms" => as_dep.platforms | cached.platforms
-            }))
-
-            cc = dep_cache[cached.name]
+          unless !((as_dep.groups - cached.groups) - [:default]).empty? || !(as_dep.platforms - cached.platforms).empty?
+            next
           end
+
+          changed = true
+          dep_cache[cached.name] =
+            Dependency.new(cached.name, nil, {
+                             'group' => as_dep.groups | cached.groups,
+                             'platforms' => as_dep.platforms | cached.platforms
+                           })
+
+          dep_cache[cached.name]
         end
       end
-    end while changed
+      break unless changed
+    end
 
-    return dep_cache
+    dep_cache
   end
 
   def parse_gemset
     path = File.expand_path(options[:gemset])
     return {} unless File.file?(path)
+
     json = Bundix.sh(NIX_INSTANTIATE, '--eval', '-E', %(
-      builtins.toJSON (import #{Nixer.serialize(path)}))
-    )
+      builtins.toJSON (import #{Nixer.serialize(path)})))
     JSON.parse(json.strip.gsub(/\\"/, '"')[1..-2])
   end
 
@@ -178,7 +182,7 @@ class Bundix
     unless block_given? ? block.call(status, out) : status.success?
       puts "$ #{args.join(' ')}" if $VERBOSE
       puts out if $VERBOSE
-      fail "command execution failed: #{status}"
+      raise "command execution failed: #{status}"
     end
     out
   end

@@ -1,3 +1,6 @@
+# frozen_string_literal: true
+
+require 'English'
 require 'optparse'
 require 'tmpdir'
 require 'tempfile'
@@ -8,7 +11,6 @@ require_relative 'shell_nix_context'
 
 class Bundix
   class CommandLine
-
     DEFAULT_OPTIONS = {
       ruby: 'ruby',
       bundle_pack_path: 'vendor/bundle',
@@ -16,10 +18,10 @@ class Bundix
       lockfile: 'Gemfile.lock',
       gemset: 'gemset.nix',
       project: File.basename(Dir.pwd)
-    }
+    }.freeze
 
     def self.run
-      self.new.run
+      new.run
     end
 
     def initialize
@@ -47,7 +49,7 @@ class Bundix
           options[:ruby] = value
         end
 
-        o.on "--bundle-pack-path=#{options[:bundle_pack_path]}", "path to pack the magic" do |value|
+        o.on "--bundle-pack-path=#{options[:bundle_pack_path]}", 'path to pack the magic' do |value|
           options[:bundle_pack_path] = value
         end
 
@@ -100,14 +102,16 @@ class Bundix
       ENV['BUNDLE_GEMFILE'] = options[:gemfile]
 
       if options[:magic]
-        fail unless system(
+        raise unless system(
           Bundix::NIX_SHELL, '-p', options[:ruby],
           "bundler.override { ruby = #{options[:ruby]}; }",
-          "--command", "bundle lock --lockfile=#{options[:lockfile]}")
-        fail unless system(
+          '--command', "bundle lock --lockfile=#{options[:lockfile]}"
+        )
+        raise unless system(
           Bundix::NIX_SHELL, '-p', options[:ruby],
           "bundler.override { ruby = #{options[:ruby]}; }",
-          "--command", "bundle pack --all --path #{options[:bundle_pack_path]}")
+          '--command', "bundle pack --all --path #{options[:bundle_pack_path]}"
+        )
       end
     end
 
@@ -140,7 +144,7 @@ class Bundix
           ENV.delete('BUNDLE_FROZEN')
           ENV.delete('BUNDLE_BIN_PATH')
           system('bundle', 'lock')
-          fail 'bundle lock failed' unless $?.success?
+          raise 'bundle lock failed' unless $CHILD_STATUS.success?
         end
       end
     end
@@ -160,7 +164,7 @@ class Bundix
         tempfile.write("\n")
         tempfile.flush
         FileUtils.cp(tempfile.path, options[:gemset])
-        FileUtils.chmod(0644, options[:gemset])
+        FileUtils.chmod(0o644, options[:gemset])
       ensure
         tempfile.close!
         tempfile.unlink
