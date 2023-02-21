@@ -21,11 +21,7 @@ module Bundix
 
     def parse_gemset
       path = File.expand_path(options[:gemset])
-      return {} unless File.file?(path)
-
-      json = Shell.sh(NIX_INSTANTIATE, '--eval', '-E', %(
-      builtins.toJSON (import #{Nixer.serialize(path)})))
-      JSON.parse(json.strip.gsub(/\\"/, '"')[1..-2])
+      File.file?(path) ? JSON.parse(System.nix_to_json(path)) : {}
     end
 
     private

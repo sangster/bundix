@@ -54,7 +54,7 @@ module Bundix
     end
 
     def fetch_git_hash
-      output = fetcher.nix_prefetch_git(source_uri, source_revision, submodules: submodules?)
+      output = System.nix_prefetch_git(source_uri, source_revision, submodules: submodules?)
 
       # FIXME: this is a hack, we should separate $stdout/$stderr in the sh call
       JSON.parse(output[/({[^}]+})\s*\z/m])['sha256'].tap do |hash|

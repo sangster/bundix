@@ -10,15 +10,6 @@ require 'tmpdir'
 module Bundix
   # Provides a command-line interface to {Converter}.
   class CommandLine
-    DEFAULT_OPTIONS = {
-      ruby: 'ruby',
-      bundle_pack_path: 'vendor/bundle',
-      gemfile: 'Gemfile',
-      lockfile: 'Gemfile.lock',
-      gemset: 'gemset.nix',
-      project: File.basename(Dir.pwd)
-    }.freeze
-
     attr_accessor :options
 
     def self.run
@@ -59,10 +50,11 @@ module Bundix
 
     def handle_magic
       ENV['BUNDLE_GEMFILE'] = options[:gemfile]
-
       return unless options[:magic]
-      raise unless system_nix_bundle_lock
-      raise unless system_nix_bundle_pack
+
+      ruby = options[:ruby]
+      raise unless System.nix_bundle_lock(ruby, options[:lockfile])
+      raise unless System.nix_bundle_pack(ruby, options[:bundle_pack_path])
     end
 
     def handle_init
@@ -110,22 +102,6 @@ module Bundix
     ensure
       tempfile.close!
       tempfile.unlink
-    end
-
-    def system_nix_bundle_lock
-      system(
-        NIX_SHELL, '-p', options[:ruby],
-        "bundler.override { ruby = #{options[:ruby]}; }",
-        '--command', "bundle lock --lockfile=#{options[:lockfile]}"
-      )
-    end
-
-    def system_nix_bundle_pack
-      system(
-        NIX_SHELL, '-p', options[:ruby],
-        "bundler.override { ruby = #{options[:ruby]}; }",
-        '--command', "bundle pack --all --path #{options[:bundle_pack_path]}"
-      )
     end
   end
 end

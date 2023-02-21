@@ -26,19 +26,8 @@ module Bundix
       nil
     end
 
-    def nix_prefetch_git(uri, revision, submodules: false)
-      home = Dir.home
-      ENV['HOME'] = '/homeless-shelter'
-
-      args = []
-      args << '--url' << uri
-      args << '--rev' << revision
-      args << '--hash' << 'sha256'
-      args << '--fetch-submodules' if submodules
-
-      Shell.sh(NIX_PREFETCH_GIT, *args)
-    ensure
-      ENV['HOME'] = home
+    def nix_prefetch_git(...)
+      System.nix_prefetch_git(...)
     end
 
     private
@@ -51,23 +40,14 @@ module Bundix
       download(file, url) unless File.size?(file)
       return unless File.size?(file)
 
-      system_prefetch_url(url, file)
+      System.prefetch_url(url, file)
     rescue StandardError => e
       warn(e.full_message)
       nil
     end
 
-    def system_prefetch_url(url, file)
-      Shell.sh(
-        NIX_PREFETCH_URL,
-        '--type', 'sha256',
-        '--name', File.basename(url), # --name mygem-1.2.3.gem
-        "file://#{file}"              # file:///.../https_rubygems_org_gems_mygem-1_2_3_gem
-      ).force_encoding('UTF-8').strip
-    end
-
     def format_hash(hash)
-      Shell.sh(NIX_HASH, '--type', 'sha256', '--to-base32', hash)[SHA256_32]
+      System.format_hash(hash)
     end
 
     def fetch_local_hash(spec)
