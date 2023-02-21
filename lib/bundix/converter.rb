@@ -59,16 +59,18 @@ module Bundix
     end
 
     def convert_single_spec(spec)
-      {
-        spec.name => {
-          version: spec.version.to_s,
-          source: Source.new(spec, fetcher).convert
-        }.merge(platforms(spec)).merge(groups(spec))
-      }
+      value = { version: spec.version.to_s, source: spec_source(spec) }
+      { spec.name => value.merge(platforms(spec)).merge(groups(spec)) }
+    rescue Bundler::Dsl::DSLError
+      raise
     rescue StandardError => e
       warn "Skipping #{spec.name}: #{e}"
       puts e.backtrace
       { spec.name => {} }
+    end
+
+    def spec_source(spec)
+      Source.new(spec, fetcher).convert
     end
 
     def find_cached_spec(spec, cache)

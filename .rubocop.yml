@@ -24,4 +24,5 @@ Minitest/MultipleAssertions:
 
 Naming/FileName:
   Exclude:
+    - 'Rakefile'
     - '**/Gemfile'

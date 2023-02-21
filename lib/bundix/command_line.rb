@@ -49,9 +49,9 @@ module Bundix
     end
 
     def handle_magic
-      ENV['BUNDLE_GEMFILE'] = options[:gemfile]
       return unless options[:magic]
 
+      ENV['BUNDLE_GEMFILE'] = options[:gemfile]
       ruby = options[:ruby]
       raise unless System.nix_bundle_lock(ruby, options[:lockfile])
       raise unless System.nix_bundle_pack(ruby, options[:bundle_pack_path])
@@ -79,12 +79,17 @@ module Bundix
     end
 
     def system_bundle_lock
-      ENV.delete('BUNDLE_PATH')
-      ENV.delete('BUNDLE_FROZEN')
-      ENV.delete('BUNDLE_BIN_PATH')
+      with_deleted_env(%w[BUNDLE_PATH BUNDLE_FROZEN BUNDLE_BIN_PATH BUNDLE_GEMFILE]) do
+        system('bundle', 'lock')
+        raise 'bundle lock failed' unless $CHILD_STATUS.success?
+      end
+    end
 
-      system('bundle', 'lock')
-      raise 'bundle lock failed' unless $CHILD_STATUS.success?
+    def with_deleted_env(env_vars)
+      old_values = env_vars.to_h { |var| [var, ENV.delete(var)] }
+      yield
+    ensure
+      old_values.each { |k, v| ENV[k] = v if v }
     end
 
     def build_gemset

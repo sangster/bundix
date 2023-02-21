@@ -7,6 +7,10 @@ class FetcherTest < UnitTest
   include WithDir
   include WithServer
 
+  def setup
+    $VERBOSE = true
+  end
+
   def test_download_with_credentials
     with_dir_and_server(bundler_credential: 'secret') do |uri|
       file = 'some-file'
