@@ -43,7 +43,8 @@
           # See https://nixos.wiki/wiki/Packaging/Ruby#Build_default.nix
           installPhase = ''
             mkdir -p $out/{bin,share/${name}}
-            cp -r $src/* $out/share/${name}
+            cp -r $src/{bin,lib,template} $out/share/${name}
+
             bin=$out/bin/${name}
             cat > $bin <<EOF
             #!/bin/sh -e
