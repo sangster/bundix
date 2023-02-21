@@ -12,6 +12,7 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         name = "bundix";
+        version = extract-ruby-version ./lib/bundix/version.rb;
         pkgs = import nixpkgs { inherit system; };
 
         gems = with pkgs; bundlerEnv {
@@ -23,11 +24,22 @@
           ];
         };
 
+        extract-ruby-version = path: with builtins;
+          let
+            pattern = ".*VERSION[[:space:]]*=[[:space:]]['\"](.*)['\"].*";
+            captures = match pattern (readFile path);
+            version-list = if isNull captures || length captures == 0
+                           then [upstream-package.version]
+                           else captures;
+          in elemAt version-list 0;
+
         upstream-package = import ./default.nix {
           inherit pkgs;
           inherit (gems) ruby;
         };
         bundled-package = upstream-package.overrideAttrs (_old: {
+          inherit name version;
+
           # See https://nixos.wiki/wiki/Packaging/Ruby#Build_default.nix
           installPhase = ''
             mkdir -p $out/{bin,share/${name}}
