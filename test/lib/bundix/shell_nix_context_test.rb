@@ -2,10 +2,10 @@
 
 require_relative '../../test_helper'
 
-class TestShellNixContext < UnitTest
+class ShellNixContextTest < UnitTest
   def test_commandline_populates_context
-    @cli = Bundix::CommandLine.new
-    context = @cli.shell_nix_context
+    cli = Bundix::CommandLine.new
+    context = cli.shell_nix_context
 
     Bundix::ShellNixContext.members.each do |field|
       refute_nil(context[field], "#{field} was nil")

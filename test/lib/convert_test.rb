@@ -2,7 +2,7 @@
 
 require_relative '../test_helper'
 
-class TestConvert < UnitTest
+class ConvertTest < UnitTest
   include WithGemset
 
   def test_bundler_dep

@@ -2,7 +2,7 @@
 
 require_relative '../../test_helper'
 
-class TestNixer < UnitTest
+class NixerTest < UnitTest
   def test_object2nix_hash
     assert_equal("{\n  a = \"x\";\n  b = \"7\";\n}",
                  Bundix::Nixer.new({ a: 'x', b: '7' }).serialize)
