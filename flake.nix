@@ -26,7 +26,7 @@
 
         extract-ruby-version = path: with builtins;
           let
-            pattern = ".*VERSION[[:space:]]*=[[:space:]]['\"](.*)['\"].*";
+            pattern = ".*VERSION[[:space:]]*=[[:space:]]['\"]([^'\"]+)['\"].*";
             captures = match pattern (readFile path);
             version-list = if isNull captures || length captures == 0
                            then [upstream-package.version]
