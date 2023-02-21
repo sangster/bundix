@@ -1,14 +1,11 @@
 # frozen_string_literal: true
 
 require 'English'
+require 'erb'
 require 'optparse'
-require 'tmpdir'
-require 'tempfile'
 require 'pathname'
-
-require_relative '../bundix'
-require_relative 'commandline_options'
-require_relative 'shell_nix_context'
+require 'tempfile'
+require 'tmpdir'
 
 module Bundix
   # Provides a command-line interface to {Converter}.

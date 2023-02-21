@@ -2,11 +2,11 @@
 
 require 'erb'
 
-using Bundix::HashWithNixOrder
-
 module Bundix
   # Serializes ruby objects in nix syntax.
   class Nixer
+    using Bundix::HashWithNixOrder
+
     SET_T = ERB.new(File.read(File.expand_path('../../template/nixer/set.erb', __dir__)).chomp)
     LIST_T = ERB.new(File.read(File.expand_path('../../template/nixer/list.erb', __dir__)).chomp)
 

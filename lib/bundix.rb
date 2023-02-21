@@ -5,16 +5,10 @@ require 'fileutils'
 require 'json'
 require 'net/http'
 require 'open3'
-require_relative 'bundix/converter'
-require_relative 'bundix/dependency'
-require_relative 'bundix/dependency_cache'
-require_relative 'bundix/fetcher'
-require_relative 'bundix/hash_with_nix_order'
-require_relative 'bundix/http_fetcher'
-require_relative 'bundix/nixer'
-require_relative 'bundix/shell'
-require_relative 'bundix/source'
-require_relative 'bundix/version'
+
+require 'zeitwerk'
+loader = Zeitwerk::Loader.for_gem
+loader.setup
 
 module Bundix
   NIX_INSTANTIATE = 'nix-instantiate'
