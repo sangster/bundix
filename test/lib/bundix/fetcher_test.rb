@@ -9,39 +9,39 @@ module Bundix
     include WithServer
 
     def test_download_with_credentials
-      with_dir(bundler_credential: 'secret') do |dir|
-        with_server(returning_content: 'ok') do |port|
-          file = 'some-file'
+      with_dir_and_server(bundler_credential: 'secret') do |uri|
+        file = 'some-file'
 
-          assert_equal(File.realpath(dir), Bundler.root.to_s)
+        out, err = capture_io { Bundix::Fetcher.new.download(file, uri) }
 
-          out, err = capture_io do
-            Bundix::Fetcher.new.download(file, "http://127.0.0.1:#{port}/test")
-          end
-
-          assert_includes(@request, "Authorization: Basic #{Base64.encode64('secret:').chomp}")
-          assert_equal('ok', File.read(file))
-          assert_empty(out)
-          assert_match(/^Downloading .* from http.*$/, err)
-        end
+        assert_includes(@request, "Authorization: Basic #{Base64.encode64('secret:').chomp}")
+        assert_equal('ok', File.read(file))
+        assert_empty(out)
+        assert_match(/^Downloading .* from http.*$/, err)
       end
     end
 
     def test_download_without_credentials
-      with_dir(bundler_credential: nil) do |dir|
-        with_server(returning_content: 'ok') do |port|
-          file = 'some-file'
+      with_dir_and_server do |uri|
+        file = 'some-file'
 
+        out, err = capture_io { Bundix::Fetcher.new.download(file, uri) }
+
+        refute_includes(@request, 'Authorization:')
+        assert_equal('ok', File.read(file))
+        assert_empty(out)
+        assert_match(/^Downloading .* from http.*$/, err)
+      end
+    end
+
+    private
+
+    def with_dir_and_server(bundler_credential: nil)
+      with_dir(bundler_credential: bundler_credential) do |dir|
+        with_server(returning_content: 'ok') do |port|
           assert_equal(File.realpath(dir), Bundler.root.to_s)
 
-          out, err = capture_io do
-            Bundix::Fetcher.new.download(file, "http://127.0.0.1:#{port}/test")
-          end
-
-          refute_includes(@request, 'Authorization:')
-          assert_equal('ok', File.read(file))
-          assert_empty(out)
-          assert_match(/^Downloading .* from http.*$/, err)
+          yield "http://127.0.0.1:#{port}/test"
         end
       end
     end

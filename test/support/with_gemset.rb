@@ -6,7 +6,7 @@ module WithGemset
     bundle_gemfile = ENV.fetch('BUNDLE_GEMFILE', nil)
     ENV['BUNDLE_GEMFILE'] = options[:gemfile]
     options = { deps: false, lockfile: '', gemset: '' }.merge(options)
-    converter = Bundix::App.new(options)
+    converter = Bundix::Converter.new(options)
     converter.fetcher = PrefetchStub.new
     yield(converter.convert)
   ensure

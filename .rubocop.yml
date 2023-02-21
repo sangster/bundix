@@ -1,9 +1,11 @@
+################################################################################
+# RuboCop setup
+################################################################################
 require:
   - rubocop-minitest
 
 AllCops:
   NewCops: enable
-
   Include:
     - 'Gemfile'
     - 'Rakefile'
@@ -12,3 +14,14 @@ AllCops:
     - 'test/**/*.rb'
   Exclude:
     - 'vendor/**/*'
+
+
+################################################################################
+# Individual cop configurations
+################################################################################
+Minitest/MultipleAssertions:
+  Max: 5
+
+Naming/FileName:
+  Exclude:
+    - '**/Gemfile'

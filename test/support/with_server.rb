@@ -12,26 +12,33 @@ module WithServer
     @request = String.new
 
     Thread.abort_on_exception = true
-    thr = Thread.new do
-      conn = server.accept
-      until (line = conn.readline) == "\r\n"
-        @request << line
-      end
-
-      conn.write(
-        "HTTP/1.1 200 OK\r\n" \
-        "Content-Length: #{returning_content.length}\r\n" \
-        "Content-Type: text/plain\r\n" \
-        "\r\n" \
-        "#{returning_content}"
-      )
-
-      conn.close
-    end
+    thr = Thread.new { single_request(server, returning_content) }
 
     yield(port_num)
   ensure
     server.close
     thr.join
+  end
+
+  private
+
+  def single_request(server, returning_content)
+    conn = server.accept
+    until (line = conn.readline) == "\r\n"
+      @request << line
+    end
+
+    conn.write(plain_response(returning_content))
+    conn.close
+  end
+
+  def plain_response(body)
+    [
+      'HTTP/1.1 200 OK',
+      "Content-Length: #{body.length}",
+      'Content-Type: text/plain',
+      '',
+      body
+    ].join("\r\n")
   end
 end
