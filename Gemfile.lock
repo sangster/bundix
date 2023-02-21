@@ -1,3 +1,10 @@
+PATH
+  remote: .
+  specs:
+    bundix (2.5.0)
+      bundler (~> 2.4)
+      zeitwerk (~> 2.6)
+
 GEM
   remote: https://rubygems.org/
   specs:
@@ -40,11 +47,10 @@ PLATFORMS
   x86_64-linux
 
 DEPENDENCIES
-  bundler (~> 2.4)
+  bundix!
   pry-byebug (~> 3.10)
   rubocop (~> 1.45)
   rubocop-minitest (~> 0.28)
-  zeitwerk (~> 2.6)
 
 BUNDLED WITH
    2.4.6
