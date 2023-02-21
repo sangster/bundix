@@ -9,8 +9,6 @@ module Bundix
     NIX_PREFETCH_URL = 'nix-prefetch-url'
     NIX_SHELL = 'nix-shell'
 
-    SHA256_32 = /^[a-z0-9]{52}$/.freeze
-
     class << self
       def sh(*args, &block)
         out, status = Open3.capture2(*args)

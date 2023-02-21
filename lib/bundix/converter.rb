@@ -99,8 +99,8 @@ module Bundix
         spec_rev == cached_rev
     end
 
-    def cached_rubygems_spec?(cached_source, version, spec)
-      cached_source['type'] == 'gem' && version == spec.version.to_s
+    def cached_rubygems_spec?(cached_source, version, spec_version)
+      cached_source['type'] == 'gem' && version == spec_version
     end
   end
 end

@@ -34,4 +34,6 @@ module Bundix
   end.to_h.freeze
 
   PLATFORM_MAPPING = PLATFORM_ENGINES.merge(PLATFORM_VERSION_ENGINES).freeze
+
+  SHA256_32 = /^[a-z0-9]{52}$/.freeze
 end

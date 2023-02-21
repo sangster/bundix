@@ -15,7 +15,7 @@ module Bundix
     attr_accessor :options
 
     def initialize
-      @options = DEFAULT_OPTIONS.clone
+      @options = DEFAULT_OPTIONS.dup
       super { |opts| make_options(opts) }
     end
 

@@ -3,14 +3,15 @@
 module WithGemset
   def with_gemset(options)
     Bundler.instance_variable_set(:@root, Pathname.new(File.expand_path('data', __dir__)))
-    bundle_gemfile = ENV.fetch('BUNDLE_GEMFILE', nil)
+    old_bundle_gemfile = ENV.fetch('BUNDLE_GEMFILE', nil)
+
     ENV['BUNDLE_GEMFILE'] = options[:gemfile]
     options = { deps: false, lockfile: '', gemset: '' }.merge(options)
     converter = Bundix::Converter.new(options)
     converter.fetcher = PrefetchStub.new
     yield(converter.convert)
   ensure
-    ENV['BUNDLE_GEMFILE'] = bundle_gemfile
+    ENV['BUNDLE_GEMFILE'] = old_bundle_gemfile
     Bundler.reset!
   end
 
@@ -24,7 +25,8 @@ module WithGemset
     end
 
     def fetch_local_hash(_spec)
-      '5891b5b522d5df086d0ff0b110fbd9d21bb4fc7163af34d08286a2e846f6be03' # taken from `man nix-hash`
+      # Example hash taken from `man nix-hash`.
+      '5891b5b522d5df086d0ff0b110fbd9d21bb4fc7163af34d08286a2e846f6be03'
     end
 
     def fetch_remotes_hash(_spec, _remotes)

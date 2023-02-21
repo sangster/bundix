@@ -30,7 +30,17 @@ module Bundix
       System.nix_prefetch_git(...)
     end
 
-    private
+    def fetch_local_hash(spec)
+      spec.source.caches.each do |cache|
+        path = File.join(cache, "#{spec.full_name}.gem")
+        next unless File.file?(path)
+
+        hash = nix_prefetch_url(path)&.[](SHA256_32)
+        return format_hash(hash) if hash
+      end
+
+      nil
+    end
 
     def nix_prefetch_url(url)
       dir = File.join(ENV['XDG_CACHE_HOME'] || "#{Dir.home}/.cache", 'bundix')
@@ -46,22 +56,6 @@ module Bundix
       nil
     end
 
-    def format_hash(hash)
-      System.format_hash(hash)
-    end
-
-    def fetch_local_hash(spec)
-      spec.source.caches.each do |cache|
-        path = File.join(cache, "#{spec.full_name}.gem")
-        next unless File.file?(path)
-
-        hash = nix_prefetch_url(path)&.[](SHA256_32)
-        return format_hash(hash) if hash
-      end
-
-      nil
-    end
-
     def fetch_remote_hash(spec, remote)
       uri = "#{remote}/gems/#{spec.full_name}.gem"
       result = nix_prefetch_url(uri)
@@ -72,6 +66,12 @@ module Bundix
       puts "ignoring error during fetching: #{e}"
       puts e.backtrace
       nil
+    end
+
+    private
+
+    def format_hash(hash)
+      System.format_hash(hash)
     end
   end
 end
