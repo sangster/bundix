@@ -38,6 +38,18 @@ module Bundix
         options[:init] = true
       end
 
+      opts.on "--gemset=#{options[:gemset]}", 'path to the gemset.nix' do |value|
+        options[:gemset] = File.expand_path(value)
+      end
+
+      opts.on "--lockfile=#{options[:lockfile]}", 'path to the Gemfile.lock' do |value|
+        options[:lockfile] = File.expand_path(value)
+      end
+
+      opts.on "--gemfile=#{options[:gemfile]}", 'path to the Gemfile' do |value|
+        options[:gemfile] = File.expand_path(value)
+      end
+
       opts.on '-q', '--quiet', 'only output errors' do
         options[:quiet] = true
       end
