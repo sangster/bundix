@@ -31,7 +31,7 @@ pkgs.stdenv.mkDerivation rec {
       The output is then usable by the bundlerEnv derivation to list all the
       dependencies of a ruby package.
     '';
-    homepage = "https://github.com/manveru/bundix";
+    homepage = "https://github.com/nix-community/bundix";
     license = "MIT";
     maintainers = with pkgs.lib.maintainers; [ manveru zimbatm ];
     platforms = pkgs.lib.platforms.all;
