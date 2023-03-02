@@ -7,12 +7,16 @@ module Bundix
     attr_reader :options
     attr_accessor :fetcher
 
-    def initialize(options)
-      @options = { quiet: false, tempfile: nil }.merge(options)
-      @fetcher = Fetcher.new
+    def self.call(...)
+      new(...).call
     end
 
-    def convert
+    def initialize(fetcher = Fetcher.new, **options)
+      @options = { quiet: false, tempfile: nil }.merge(**options)
+      @fetcher = fetcher
+    end
+
+    def call
       # reverse so git comes last
       lockfile.specs.reverse_each.with_object({}) do |spec, gems|
         convert_spec!(spec, gems)
@@ -21,7 +25,7 @@ module Bundix
 
     def parse_gemset
       path = File.expand_path(options[:gemset])
-      File.file?(path) ? JSON.parse(System.nix_to_json(path)) : {}
+      File.file?(path) ? JSON.parse(System.nix_gemset_to_json(path)) : {}
     end
 
     private

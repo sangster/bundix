@@ -36,4 +36,6 @@ module Bundix
   PLATFORM_MAPPING = PLATFORM_ENGINES.merge(PLATFORM_VERSION_ENGINES).freeze
 
   SHA256_32 = /^[a-z0-9]{52}$/.freeze
+
+  SHELL_NIX_TEMPLATE = Pathname('./template/shell.nix.erb').freeze
 end

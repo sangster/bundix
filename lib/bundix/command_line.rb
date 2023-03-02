@@ -1,10 +1,8 @@
 # frozen_string_literal: true
 
 require 'English'
-require 'erb'
 require 'optparse'
 require 'pathname'
-require 'tempfile'
 require 'tmpdir'
 
 module Bundix
@@ -62,9 +60,7 @@ module Bundix
     end
 
     def shell_nix_string
-      path = File.expand_path('../../template/shell.nix.erb', __dir__)
-      tmpl = ERB.new(File.read(path))
-      tmpl.result(ShellNixContext.new(**options).bind)
+      Nix::Template.new(SHELL_NIX_TEMPLATE).call(**options)
     end
 
     def handle_lock
@@ -92,20 +88,11 @@ module Bundix
     end
 
     def build_gemset
-      Converter.new(options).convert
+      Converter.call(**options)
     end
 
     def save_gemset(gemset)
-      tempfile = Tempfile.new('gemset.nix', encoding: 'UTF-8')
-      tempfile.write(Nixer.serialize(gemset))
-      tempfile.write("\n")
-      tempfile.flush
-
-      FileUtils.cp(tempfile.path, options[:gemset])
-      FileUtils.chmod(0o644, options[:gemset])
-    ensure
-      tempfile.close!
-      tempfile.unlink
+      Nix::RubyToNix.new(options[:gemset]).call(gemset)
     end
   end
 end

@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
-RSpec.describe Bundix::Nixer do
-  subject(:nixer) { described_class.new(ruby_object) }
+RSpec.describe Bundix::Nix::Serializer do
+  subject(:serializer) { described_class.new(ruby_object) }
 
-  describe '#serialize' do
-    subject(:nix_code) { nixer.serialize }
+  describe '#call' do
+    subject(:nix_code) { serializer.call }
 
     context 'with an Array of Hashes' do
       let(:ruby_object) { [{ a: 'x', b: '7' }, { a: 'y', c: '8' }] }

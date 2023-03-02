@@ -4,12 +4,8 @@ RSpec.shared_context 'with gemset' do |options|
   let :gemset_options do
     { deps: false, lockfile: '', gemset: '' }.merge(options)
   end
-  let :converter do
-    Bundix::Converter.new(gemset_options).tap do |conv|
-      conv.fetcher = PrefetchStub.new
-    end
-  end
-  let(:gemset) { converter.convert }
+  let(:converter) { Bundix::Converter.new(PrefetchStub.new, **gemset_options) }
+  let(:gemset) { converter.call }
 
   around do |test|
     Bundler.instance_variable_set(:@root, spec_data_dir)

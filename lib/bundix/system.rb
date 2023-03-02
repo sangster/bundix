@@ -69,7 +69,7 @@ module Bundix
       def nix_gemset_to_json(gemset_path)
         sh(
           NIX_INSTANTIATE, '--eval', '-E',
-          "builtins.toJSON (import #{Nixer.serialize(gemset_path)})"
+          "builtins.toJSON (import #{Nix::Serializer.call(gemset_path)})"
         ).strip.gsub(/\\"/, '"')[1..-2]
       end
 

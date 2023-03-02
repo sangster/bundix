@@ -8,8 +8,8 @@ module Bundix
       def <=>(other)
         return unless other.is_a?(Hash)
 
-        larray = to_a.sort { |l, r| Bundix::Nixer.order(l, r) }
-        rarray = other.to_a.sort { |l, r| Bundix::Nixer.order(l, r) }
+        larray = to_a.sort { |l, r| Bundix::Nix::Serializer.order(l, r) }
+        rarray = other.to_a.sort { |l, r| Bundix::Nix::Serializer.order(l, r) }
         larray <=> rarray
       end
     end
