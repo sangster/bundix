@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'fileutils'
+
 # This shared context executes the test with $PWD set to a temporary directory
 # containing a temporary +Gemfile+ and optional +.bundle/config+.
 RSpec.shared_context 'with dir' do |bundler_credential: nil|

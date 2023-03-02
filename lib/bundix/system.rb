@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'open3'
+
 module Bundix
   # Helper methods for executing system processes.
   class System

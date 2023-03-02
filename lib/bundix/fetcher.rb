@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'fileutils'
+
 module Bundix
   # Fetches gems from local and remote sources.
   class Fetcher

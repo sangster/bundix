@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'json'
+
 module Bundix
   # Represents a {Bundler::Source} and a means to calculate its SHA-256 hash
   # (where applicable) and other build parameters.

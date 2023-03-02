@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 RSpec.describe Bundix::Converter do
-  subject(:converter) { described_class.new(options) }
+  subject(:converter) { described_class.new(**options) }
 
   describe '#parse_gemset' do
     subject(:gemset) { converter.parse_gemset }

@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'net/http'
+
 module Bundix
   # This fetcher fetches gems from HTTP and HTTPS sources.
   class HttpFetcher

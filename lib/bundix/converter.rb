@@ -1,19 +1,22 @@
 # frozen_string_literal: true
 
+require 'json'
+
 module Bundix
   # A service to parse a Gemfile/Gemfile.lock pair, download any gem
   # dependencies, and calculate their hashes.
   class Converter
-    attr_reader :options
-    attr_accessor :fetcher
+    attr_reader :fetcher, :options, :platforms
 
     def self.call(...)
       new(...).call
     end
 
-    def initialize(fetcher = Fetcher.new, **options)
-      @options = { quiet: false, tempfile: nil }.merge(**options)
+    def initialize(fetcher: Fetcher.new, platforms: Platforms.defaults,
+                   **options)
       @fetcher = fetcher
+      @platforms = platforms
+      @options = { quiet: false, tempfile: nil }.merge(**options)
     end
 
     def call
@@ -53,18 +56,9 @@ module Bundix
       { groups: dependency_cache.fetch(spec.name).groups }
     end
 
-    def platforms(spec)
-      # c.f. Bundler::CurrentRuby
-      platforms = dependency_cache.fetch(spec.name).platforms.map do |platform_name|
-        PLATFORM_MAPPING[platform_name.to_s]
-      end.flatten
-
-      { platforms: platforms }
-    end
-
     def convert_single_spec(spec)
       value = { version: spec.version.to_s, source: spec_source(spec) }
-      { spec.name => value.merge(platforms(spec)).merge(groups(spec)) }
+      { spec.name => value.merge(platforms: spec_platforms(spec)).merge(groups(spec)) }
     rescue Bundler::Dsl::DSLError
       raise
     rescue StandardError => e
@@ -75,6 +69,15 @@ module Bundix
 
     def spec_source(spec)
       Source.new(spec, fetcher).convert
+    end
+
+    def spec_platforms(spec)
+      # c.f. Bundler::CurrentRuby
+      dependency_cache
+        .fetch(spec.name)
+        .platforms
+        .map { |platform_name| supported_platforms[platform_name] }
+        .flatten
     end
 
     def find_cached_spec(spec, cache)
