@@ -31,16 +31,6 @@ module Bundix
       save_gemset(build_gemset)
     end
 
-    def shell_nix_context
-      ShellNixContext.new(**options)
-    end
-
-    def shell_nix_string
-      path = File.expand_path('../../template/shell.nix.erb', __dir__)
-      tmpl = ERB.new(File.read(path))
-      tmpl.result(shell_nix_context.bind)
-    end
-
     private
 
     def parse_options
@@ -69,6 +59,12 @@ module Bundix
       else
         File.write('shell.nix', shell_nix_string)
       end
+    end
+
+    def shell_nix_string
+      path = File.expand_path('../../template/shell.nix.erb', __dir__)
+      tmpl = ERB.new(File.read(path))
+      tmpl.result(ShellNixContext.new(**options).bind)
     end
 
     def handle_lock

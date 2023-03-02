@@ -20,10 +20,15 @@ module Bundix
         out
       end
 
+      # Executes {NIX_HASH} to convert a SHA-256 hash to the base32 format used
+      # by nix.
       def format_hash(hash)
         sh(NIX_HASH, '--type', 'sha256', '--to-base32', hash)[SHA256_32]
       end
 
+      # Executes {NIX_PREFETCH_GIT} to prefetch the SHA-256 hash, and other
+      # arguments, used by the nix function +buildRubyGem+ to build a gem found
+      # at the given git +uri+.
       def nix_prefetch_git(uri, revision, submodules: false)
         old_home = Dir.home
         ENV['HOME'] = '/homeless-shelter'
@@ -34,12 +39,14 @@ module Bundix
         args << '--hash' << 'sha256'
         args << '--fetch-submodules' if submodules
 
-        System.sh(NIX_PREFETCH_GIT, *args)
+        sh(NIX_PREFETCH_GIT, *args)
       ensure
         ENV['HOME'] = old_home
       end
 
-      def prefetch_url(url, file)
+      # Executes {NIX_PREFETCH_URL} to calculate the SHA-256 hash of the local
+      # +file+.
+      def nix_prefetch_url(url, file)
         sh(
           NIX_PREFETCH_URL,
           '--type', 'sha256',
@@ -48,13 +55,17 @@ module Bundix
         ).force_encoding('UTF-8').strip
       end
 
-      def nix_to_json(path)
+      # Executes {NIX_INSTANTIATE} to convert the given gemset file to JSON.
+      def nix_gemset_to_json(gemset_path)
         sh(
           NIX_INSTANTIATE, '--eval', '-E',
-          "builtins.toJSON (import #{Nixer.serialize(path)})"
+          "builtins.toJSON (import #{Nixer.serialize(gemset_path)})"
         ).strip.gsub(/\\"/, '"')[1..-2]
       end
 
+      # Uses {NIX_SHELL} to execute +bundle lock+ in the given +ruby+ version.
+      #
+      # +bundle lock+ updates the +lockfile+, without installing dependencies.
       def nix_bundle_lock(ruby, lockfile)
         system(
           NIX_SHELL, '-p', ruby,
@@ -63,6 +74,9 @@ module Bundix
         )
       end
 
+      # Uses {NIX_SHELL} to execute +bundle pack+ in the given +ruby+ version.
+      #
+      # +bundle pack+ copies +.gem+ files into the +vendor/cache+ directory.
       def nix_bundle_pack(ruby, bundle_pack_path)
         system(
           NIX_SHELL, '-p', ruby,
