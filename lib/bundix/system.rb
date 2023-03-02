@@ -10,14 +10,24 @@ module Bundix
     NIX_SHELL = 'nix-shell'
 
     class << self
+      # Execute a process and return its STDOUT. If an optional block is given,
+      # the process's status and STDOUT will be yielded.
+      #
+      # @param args [Array<String>] Arguments passed to {Open3.capture2}.
+      # @yieldparam status [Process::Status]
+      # @yieldparam stdout [String]
+      # @yieldreturn [Boolean] +false+ to raise an error.
+      # @return [String] The STDOUT of the executed process.
+      # @raise [StandardError] If a block is given and it returns falsey value,
+      #   or, if no block is given, the process fails.
       def sh(*args, &block)
-        out, status = Open3.capture2(*args)
-        unless block_given? ? block.call(status, out) : status.success?
+        stdout, status = Open3.capture2(*args)
+        unless block_given? ? block.call(status, stdout) : status.success?
           puts "$ #{args.join(' ')}" if $VERBOSE
-          puts out if $VERBOSE
+          puts stdout if $VERBOSE
           raise "command execution failed: #{status}"
         end
-        out
+        stdout
       end
 
       # Executes {NIX_HASH} to convert a SHA-256 hash to the base32 format used
