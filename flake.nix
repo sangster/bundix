@@ -2,10 +2,8 @@
   description = "Bundix makes it easy to package your Bundler-enabled Ruby applications with the Nix package manager";
 
   inputs = {
-    # nixpkgs needs to be 22.11, or newer. `bundlerEnv.extraConfigPaths` is
-    # required to include the *.gemspec file.
-    nixpkgs.url = "github:NixOS/nixpkgs?ref=22.11";
-    flake-utils.url = "github:numtide/flake-utils";
+    nixpkgs.url = github:NixOS/nixpkgs;
+    flake-utils.url = github:numtide/flake-utils;
   };
 
   outputs = { self, nixpkgs, flake-utils }:
