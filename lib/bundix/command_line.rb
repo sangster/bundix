@@ -36,7 +36,7 @@ module Bundix
     end
 
     def shell_nix_string
-      path = File.expand_path('../../template/shell-nix.erb', __dir__)
+      path = File.expand_path('../../template/shell.nix.erb', __dir__)
       tmpl = ERB.new(File.read(path))
       tmpl.result(shell_nix_context.bind)
     end
