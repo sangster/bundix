@@ -10,18 +10,21 @@ require 'tmpdir'
 module Bundix
   # Provides a command-line interface to {Converter}.
   class CommandLine
-    attr_accessor :options
+    attr_reader :options
 
     def self.run
       new.run
     end
 
+    # @param options [Hash] Options which affect the operation of the
+    #   application. If none are given, {ARGV} will be parsed for command-line
+    #   flags.
+    # @see CommandLineOptions for available option keys.
     def initialize(**options)
       @options = options.empty? ? parse_options : options
     end
 
     def run
-      parse_options
       handle_magic
       handle_lock
       handle_init
