@@ -12,8 +12,8 @@ module Bundix
   class CommandLine
     attr_reader :options
 
-    def self.run
-      new.run
+    def self.call
+      new.call
     end
 
     # @param options [Hash] Options which affect the operation of the
@@ -24,7 +24,7 @@ module Bundix
       @options = options.empty? ? parse_options : options
     end
 
-    def run
+    def call
       handle_magic
       handle_lock
       handle_init
