@@ -50,7 +50,7 @@ module Bundix
       download(file, url) unless File.size?(file)
       return unless File.size?(file)
 
-      System.prefetch_url(url, file)
+      System.nix_prefetch_url(url, file)
     rescue StandardError => e
       warn(e.full_message)
       nil
