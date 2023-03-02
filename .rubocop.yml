@@ -24,3 +24,7 @@ Naming/FileName:
   Exclude:
     - 'Rakefile'
     - '**/Gemfile'
+
+RSpec/DescribeClass:
+  Exclude:
+    - 'spec/integration/**/*_spec.rb'

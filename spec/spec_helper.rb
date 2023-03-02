@@ -5,10 +5,7 @@ require 'pry-byebug'
 Dir[Pathname.new(__dir__).join('support', '**', '*.rb')].sort.each { |f| require f }
 
 RSpec.configure do |config|
-  # Disable RSpec exposing methods globally on `Module` and `main`
   config.disable_monkey_patching!
-
-  config.expect_with :rspec do |c|
-    c.syntax = :expect
-  end
+  config.expect_with(:rspec) { |c| c.syntax = :expect }
+  config.shared_context_metadata_behavior = :apply_to_host_groups
 end

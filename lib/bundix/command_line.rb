@@ -16,8 +16,8 @@ module Bundix
       new.run
     end
 
-    def initialize
-      @options = parse_options
+    def initialize(**options)
+      @options = options.empty? ? parse_options : options
     end
 
     def run
@@ -29,7 +29,7 @@ module Bundix
     end
 
     def shell_nix_context
-      ShellNixContext.from_hash(options)
+      ShellNixContext.new(**options)
     end
 
     def shell_nix_string

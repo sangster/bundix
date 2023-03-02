@@ -1,11 +1,8 @@
 # frozen_string_literal: true
 
 module Bundix
-  ShellNixContext = Struct.new(:project, :ruby, :gemfile, :lockfile, :gemset) do
-    def self.from_hash(hash)
-      new(*hash.values_at(*members))
-    end
-
+  ShellNixContext = Struct.new(:project, :ruby, :gemfile, :lockfile, :gemset,
+                               keyword_init: true) do
     def bind
       binding
     end
