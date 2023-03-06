@@ -5,7 +5,6 @@ require 'open3'
 module Bundix
   # Helper methods for executing system processes.
   class System
-    NIX_HASH = 'nix-hash'
     NIX_INSTANTIATE = 'nix-instantiate'
     NIX_PREFETCH_GIT = 'nix-prefetch-git'
     NIX_PREFETCH_URL = 'nix-prefetch-url'
@@ -30,12 +29,6 @@ module Bundix
           raise "command execution failed: #{status}"
         end
         stdout
-      end
-
-      # Executes {NIX_HASH} to convert a SHA-256 hash to the base32 format used
-      # by nix.
-      def format_hash(hash)
-        sh(NIX_HASH, '--type', 'sha256', '--to-base32', hash)[SHA256_32]
       end
 
       # Executes {NIX_PREFETCH_GIT} to prefetch the SHA-256 hash, and other

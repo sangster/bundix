@@ -22,7 +22,7 @@ module Bundix
     def fetch_remotes_hash(spec, remotes)
       remotes.each do |remote|
         hash = fetch_remote_hash(spec, remote)
-        return remote, System.format_hash(hash) if hash
+        return remote, Nix::Hash32.call(hash) if hash
       end
 
       nil
@@ -38,7 +38,7 @@ module Bundix
         next unless File.file?(path)
 
         hash = nix_prefetch_url(path)&.[](SHA256_32)
-        return System.format_hash(hash) if hash
+        return Nix::Hash32.call(hash) if hash
       end
 
       nil
