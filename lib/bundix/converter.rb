@@ -6,17 +6,22 @@ module Bundix
   # A service to parse a Gemfile/Gemfile.lock pair, download any gem
   # dependencies, and calculate their hashes.
   class Converter
+    DEFAULT_OPTIONS = { quiet: false, tempfile: nil }.freeze
+
     attr_reader :fetcher, :options, :platforms
 
     def self.call(...)
       new(...).call
     end
 
+    # @params fetcher [Fetcher]
+    # @params platforms [Platforms]
+    # @params options [Hash]
     def initialize(fetcher: Fetcher.new, platforms: Platforms.defaults,
                    **options)
       @fetcher = fetcher
       @platforms = platforms
-      @options = { quiet: false, tempfile: nil }.merge(**options)
+      @options = DEFAULT_OPTIONS.merge(**options)
     end
 
     def call

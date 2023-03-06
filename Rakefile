@@ -4,17 +4,27 @@ require 'rake/testtask'
 require 'rspec/core/rake_task'
 require 'rubocop/rake_task'
 
-desc 'Start a ruby REPL'
-task :console do
-  require 'pry-byebug'
-  require_relative './lib/bundix'
-  Pry.start
+namespace :dev do
+  desc 'Start a ruby REPL'
+  task :console do
+    require 'pry-byebug'
+    require_relative './lib/bundix'
+    Pry.start
+  end
+
+  desc 'Automatically execute tests when files are changed'
+  task :guard do
+    sh 'guard'
+  end
 end
 
-RSpec::Core::RakeTask.new(:spec)
+namespace :test do
+  RSpec::Core::RakeTask.new(:specs)
+end
 
 namespace :lint do
   RuboCop::RakeTask.new
 end
 
-task default: %i[spec lint:rubocop]
+desc 'Run all tests and linters'
+task default: %i[test:specs lint:rubocop]

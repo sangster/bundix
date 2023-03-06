@@ -97,6 +97,30 @@ easier, that's why I also implemented a pretty printer for the `gemset.nix`.
 
 I hope you enjoy using bundix as much as I do, and if you don't, let me know.
 
+## Development
+
+If you wish to further develop this project, [`Rakefile`](./Rakefile), provides
+some utilities which may help you. Furthermore, running `nix develop` will start
+a new shell where `rake`, and other development dependencies are available. Some
+example `rake` commands (via `nix develop` in these examples):
+
+``` sh
+$ nix develop -c rake -T           # List available rake commands
+$ nix develop -c rake              # Default rake command: all tests and linters
+$ nix develop -c rake dev:console  # Open a ruby REPL shell
+$ nix develop -c rake dev:guard    # Begin automated test-runner
+```
+
+### Building
+
+As a nix package, this gem can be built with `nix build`. The derivation will be
+built in the nix store, and a symlink to its directory will be created at
+`./result`.
+
+As a convenience, you can build *and* run Bundix with `nix run .#`. Any
+command-line arguments must be preceeded with `--`; for example:
+`nix run .# -- --help`.
+
 ## Closing words
 
 For any questions or suggestions, please file an issue on Github or ask in
