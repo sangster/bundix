@@ -22,7 +22,7 @@ module Bundix
     def fetch_remotes_hash(spec, remotes)
       remotes.each do |remote|
         hash = fetch_remote_hash(spec, remote)
-        return remote, format_hash(hash) if hash
+        return remote, System.format_hash(hash) if hash
       end
 
       nil
@@ -38,7 +38,7 @@ module Bundix
         next unless File.file?(path)
 
         hash = nix_prefetch_url(path)&.[](SHA256_32)
-        return format_hash(hash) if hash
+        return System.format_hash(hash) if hash
       end
 
       nil
@@ -68,12 +68,6 @@ module Bundix
       puts "ignoring error during fetching: #{e}"
       puts e.backtrace
       nil
-    end
-
-    private
-
-    def format_hash(hash)
-      System.format_hash(hash)
     end
   end
 end

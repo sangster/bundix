@@ -27,7 +27,7 @@ module Bundix
       #   by {#serializer_class}.
       def call(obj)
         tempfile = Tempfile.new('ruby.nix', encoding: 'UTF-8')
-        tempfile.write(serializer_class.new(obj))
+        tempfile.write(serializer_class.new(obj).call)
         tempfile.write("\n")
         tempfile.flush
 

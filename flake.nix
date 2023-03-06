@@ -10,7 +10,7 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         name = "bundix";
-        version = extract-ruby-version ./lib/bundix/version.rb;
+        version = extract-bundix-version ./lib/bundix/version.rb;
         pkgs = import nixpkgs { inherit system; };
 
         gems = with pkgs; bundlerEnv {
@@ -22,7 +22,7 @@
           ];
         };
 
-        extract-ruby-version = path: with builtins;
+        extract-bundix-version = path: with builtins;
           let
             pattern = ".*VERSION[[:space:]]*=[[:space:]]['\"]([^'\"]+)['\"].*";
             captures = match pattern (readFile path);

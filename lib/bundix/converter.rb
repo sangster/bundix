@@ -27,7 +27,7 @@ module Bundix
     end
 
     def parse_gemset
-      path = File.expand_path(options[:gemset])
+      path = File.expand_path(options[:gemset].to_s)
       File.file?(path) ? JSON.parse(System.nix_gemset_to_json(path)) : {}
     end
 
@@ -76,7 +76,7 @@ module Bundix
       dependency_cache
         .fetch(spec.name)
         .platforms
-        .map { |platform_name| supported_platforms[platform_name] }
+        .map { |platform_name| platforms[platform_name] }
         .flatten
     end
 
