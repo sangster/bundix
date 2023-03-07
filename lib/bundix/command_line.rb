@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require 'English'
-require 'optparse'
 require 'pathname'
 require 'tmpdir'
 
@@ -10,8 +9,8 @@ module Bundix
   class CommandLine
     attr_reader :options
 
-    def self.call
-      new.call
+    def self.call(...)
+      new(...).call
     end
 
     # @param options [Hash] Options which affect the operation of the
@@ -23,8 +22,8 @@ module Bundix
     end
 
     def call
-      handle_magic
-      handle_lock
+      handle_bundle_lock
+      handle_bundle_cache
       handle_init
       save_gemset(build_gemset)
     end
@@ -39,13 +38,26 @@ module Bundix
       op.options
     end
 
-    def handle_magic
-      return unless options[:magic]
+    def handle_bundle_lock
+      bundle_lock if (options[:lock] && lockfile_stale?) || options[:update_lock]
+    end
 
-      ENV['BUNDLE_GEMFILE'] = options[:gemfile]
-      ruby = options[:ruby]
-      raise unless System.nix_bundle_lock(ruby, options[:lockfile])
-      raise unless System.nix_bundle_pack(ruby, options[:bundle_pack_path])
+    def bundle_lock
+      BundlerLock.new(options[:gemfile], options[:lockfile], update: options[:update_lock])
+                 .call
+                 .tap { |result| raise unless result }
+    end
+
+    def lockfile_stale?(lockfile: options[:lockfile], gemfile: options[:gemfile])
+      !File.file?(lockfile) || File.mtime(gemfile) > File.mtime(lockfile)
+    end
+
+    def handle_bundle_cache
+      return unless options[:cache]
+
+      System.temp_env('BUNDLE_GEMFILE' => options[:gemfile]) do
+        raise unless System.nix_bundle_cache(options[:ruby], options[:bundle_cache_path])
+      end
     end
 
     def handle_init
@@ -61,30 +73,6 @@ module Bundix
 
     def shell_nix_string
       Nix::Template.new(SHELL_NIX_TEMPLATE).call(**options)
-    end
-
-    def handle_lock
-      return unless options[:lock]
-
-      lock = !File.file?(options[:lockfile])
-      lock ||= File.mtime(options[:gemfile]) > File.mtime(options[:lockfile])
-      return unless lock
-
-      system_bundle_lock
-    end
-
-    def system_bundle_lock
-      with_deleted_env(%w[BUNDLE_PATH BUNDLE_FROZEN BUNDLE_BIN_PATH BUNDLE_GEMFILE]) do
-        system('bundle', 'lock')
-        raise 'bundle lock failed' unless $CHILD_STATUS.success?
-      end
-    end
-
-    def with_deleted_env(env_vars)
-      old_values = env_vars.to_h { |var| [var, ENV.delete(var)] }
-      yield
-    ensure
-      old_values.each { |k, v| ENV[k] = v if v }
     end
 
     def build_gemset

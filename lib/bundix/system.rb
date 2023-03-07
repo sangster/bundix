@@ -15,14 +15,16 @@ module Bundix
       # the process's status and STDOUT will be yielded.
       #
       # @param args [Array<String>] Arguments passed to {Open3.capture2}.
+      # @param env [Hash] Environmental variables to pass to the child process.
+      #   defaults to {ENV}.
       # @yieldparam status [Process::Status]
       # @yieldparam stdout [String]
       # @yieldreturn [Boolean] +false+ to raise an error.
       # @return [String] The STDOUT of the executed process.
       # @raise [StandardError] If a block is given and it returns falsey value,
       #   or, if no block is given, the process fails.
-      def sh(*args, &block)
-        stdout, status = Open3.capture2(*args)
+      def sh(*args, env: ENV, &block)
+        stdout, status = Open3.capture2(env, *args)
         unless block_given? ? block.call(status, stdout) : status.success?
           puts "$ #{args.join(' ')}" if $VERBOSE
           puts stdout if $VERBOSE
@@ -68,25 +70,29 @@ module Bundix
         ).strip.gsub(/\\"/, '"')[1..-2]
       end
 
-      # Uses {NIX_SHELL} to execute +bundle lock+ in the given +ruby+ version.
-      #
-      # +bundle lock+ updates the +lockfile+, without installing dependencies.
-      def nix_bundle_lock(ruby, lockfile)
-        system(
-          NIX_SHELL, '-p', ruby,
-          "bundler.override { ruby = #{ruby}; }",
-          '--command', "bundle lock --lockfile=#{lockfile}"
-        )
+      # Temporarily modify {ENV} for the duration of the given block.
+      def temp_env(**env)
+        prev_env = env.to_h { |k, _| [k, ENV.fetch(k, nil)] }
+        env.each { |k, v| ENV[k] = v }
+        yield
+      ensure
+        prev_env.each { |k, v| ENV[k] = v }
       end
 
-      # Uses {NIX_SHELL} to execute +bundle pack+ in the given +ruby+ version.
+      # Uses {NIX_SHELL} to execute +bundle cache+ in the given +ruby+ version.
       #
-      # +bundle pack+ copies +.gem+ files into the +vendor/cache+ directory.
-      def nix_bundle_pack(ruby, bundle_pack_path)
-        system(
+      # +bundle cache+ copies +.gem+ files into the +vendor/cache+ directory.
+      def nix_bundle_cache(ruby, bundle_cache_path)
+        nix_bundler(ruby, "bundle cache --all --path '#{bundle_cache_path}'")
+      end
+
+      def nix_bundler(ruby, cmd, **kwargs)
+        pp cmd
+        sh(
           NIX_SHELL, '-p', ruby,
           "bundler.override { ruby = #{ruby}; }",
-          '--command', "bundle pack --all --path #{bundle_pack_path}"
+          '--command', cmd,
+          **kwargs
         )
       end
     end

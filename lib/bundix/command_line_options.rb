@@ -1,11 +1,13 @@
 # frozen_string_literal: true
 
+require 'optparse'
+
 module Bundix
   # Parses commandline options.
   class CommandLineOptions < OptionParser
     DEFAULT_OPTIONS = {
       ruby: 'ruby',
-      bundle_pack_path: 'vendor/bundle',
+      bundle_cache_path: 'vendor/bundle',
       gemfile: 'Gemfile',
       lockfile: 'Gemfile.lock',
       gemset: 'gemset.nix',
@@ -22,16 +24,9 @@ module Bundix
     private
 
     def make_options(opts) # rubocop:disable Metrics/AbcSize,Metrics/MethodLength
-      opts.on '-m', '--magic', 'lock, pack, and write dependencies' do
-        options[:magic] = true
-      end
-
-      opts.on "--ruby=#{options[:ruby]}", 'ruby version to use for magic and init, defaults to latest' do |value|
+      opts.on "--ruby=#{options[:ruby]}",
+              'ruby version to use for magic and init, defaults to latest' do |value|
         options[:ruby] = value
-      end
-
-      opts.on "--bundle-pack-path=#{options[:bundle_pack_path]}", 'path to pack the magic' do |value|
-        options[:bundle_pack_path] = value
       end
 
       opts.on '-i', '--init', "initialize a new shell.nix for nix-shell (won't overwrite old ones)" do
@@ -54,8 +49,22 @@ module Bundix
         options[:quiet] = true
       end
 
-      opts.on '-l', '--lock', 'generate Gemfile.lock first' do
+      opts.on '-l', '--bundle-lock', 'generate Gemfile.lock first' do
         options[:lock] = true
+      end
+
+      opts.on '-u', '--bundle-update [gems]',
+              'Ignores the existing lockfile. Resolve then updates lockfile. Taking a list of gems or updating ' \
+              'all gems if no list is given (implies --bundle-lock)' do |gems|
+        options[:update_lock] = gems || true
+      end
+
+      opts.on '-c', '--bundle-cache', 'Package your needed .gem files into your application' do
+        options[:cache] = true
+      end
+
+      opts.on "--bundle-cache-path=#{options[:bundle_cache_path]}", 'Path to pack built gems' do |value|
+        options[:bundle_cache_path] = value
       end
 
       opts.on '-v', '--version', 'show the version of bundix' do

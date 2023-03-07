@@ -44,8 +44,7 @@ module Bundix
       nil
     end
 
-    def nix_prefetch_url(url)
-      dir = File.join(ENV['XDG_CACHE_HOME'] || "#{Dir.home}/.cache", 'bundix')
+    def nix_prefetch_url(url, dir: CACHE_DIR)
       FileUtils.mkdir_p(dir)
       file = File.join(dir, url.gsub(/[^\w-]+/, '_'))
 
