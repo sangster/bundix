@@ -17,7 +17,8 @@ module Bundix
       init_template: FLAKE_NIX_TEMPLATES['default'],
       lockfile: './Gemfile.lock',
       project: File.basename(Dir.pwd),
-      ruby_derivation: 'ruby'
+      ruby_derivation: 'ruby',
+      skip_gemset: false
     }.freeze
 
     attr_accessor :options
@@ -63,6 +64,10 @@ module Bundix
 
       opts.on '--gemfile=PATH', "path to the Gemfile #{default :gemfile}" do |value|
         options[:gemfile] = File.expand_path(value)
+      end
+
+      opts.on '--skip-gemset', 'do not generate gemset' do
+        options[:skip_gemset] = true
       end
 
       opts.on '-q', '--quiet', 'only output errors' do

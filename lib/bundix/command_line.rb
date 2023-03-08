@@ -25,7 +25,7 @@ module Bundix
       handle_bundle_lock
       handle_bundle_cache
       handle_init
-      save_gemset(build_gemset)
+      save_gemset(build_gemset) unless options[:skip_gemset]
     end
 
     private
