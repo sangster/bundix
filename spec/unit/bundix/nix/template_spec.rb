@@ -25,7 +25,7 @@ RSpec.describe Bundix::Nix::Template do
           let
             env = bundlerEnv {
               name = "test-project-bundler-env";
-              inherit test-ruby;
+              ruby = test-ruby;
               gemfile  = ./test-gemfile;
               lockfile = ./test-lockfile;
               gemset   = ./test-gemset;
