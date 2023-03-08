@@ -56,7 +56,7 @@ module Bundix
     def handle_bundle_cache
       return unless options[:cache]
 
-      BundlerProxy::Cache.new(options[:bundle_cache_path], options[:gemfile])
+      BundlerProxy::Cache.new(options[:cache], options[:gemfile])
                          .call
                          .tap { |result| raise unless result }
     end
@@ -73,7 +73,8 @@ module Bundix
     end
 
     def shell_nix_string
-      Nix::Template.new(SHELL_NIX_TEMPLATE).call(**options)
+      Nix::Template.new(SHELL_NIX_TEMPLATE)
+                   .call(ruby: options[:init], **options)
     end
 
     def build_gemset

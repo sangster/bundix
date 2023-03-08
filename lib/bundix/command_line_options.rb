@@ -5,43 +5,44 @@ require 'optparse'
 module Bundix
   # Parses commandline options.
   class CommandLineOptions < OptionParser
-    DEFAULT_OPTIONS = {
-      ruby: 'ruby',
-      bundle_cache_path: 'vendor/bundle',
-      gemfile: 'Gemfile',
-      lockfile: 'Gemfile.lock',
-      gemset: 'gemset.nix',
-      project: File.basename(Dir.pwd)
+    DEFAULTS = {
+      bundle_cache_path: './vendor/bundle',
+      gemfile: './Gemfile',
+      gemset: './gemset.nix',
+      lockfile: './Gemfile.lock',
+      project: File.basename(Dir.pwd),
+      ruby_derivation: 'ruby'
     }.freeze
 
     attr_accessor :options
 
     def initialize
-      @options = DEFAULT_OPTIONS.dup
+      @options = DEFAULTS.dup
       super { |opts| make_options(opts) }
     end
 
     private
 
     def make_options(opts) # rubocop:disable Metrics/AbcSize,Metrics/MethodLength
-      opts.on "--ruby=#{options[:ruby]}",
-              'ruby version to use for magic and init, defaults to latest' do |value|
-        options[:ruby] = value
+      opts.on '-i', '--init[=RUBY_DERIVATION]',
+              "initialize a new shell.nix for nix-shell (won't overwrite old ones)" do |ruby|
+        options[:init] = ruby || DEFAULTS[:ruby_derivation]
       end
 
-      opts.on '-i', '--init', "initialize a new shell.nix for nix-shell (won't overwrite old ones)" do
-        options[:init] = true
+      opts.on '-p', '--init-project=NAME',
+              "project name to use with --init #{default :project}" do |name|
+        options[:project] = name
       end
 
-      opts.on "--gemset=#{options[:gemset]}", 'path to the gemset.nix' do |value|
+      opts.on '--gemset=PATH', "path to the gemset.nix #{default :gemset}" do |value|
         options[:gemset] = File.expand_path(value)
       end
 
-      opts.on "--lockfile=#{options[:lockfile]}", 'path to the Gemfile.lock' do |value|
+      opts.on '--lockfile=PATH', "path to the Gemfile.lock #{default :lockfile}" do |value|
         options[:lockfile] = File.expand_path(value)
       end
 
-      opts.on "--gemfile=#{options[:gemfile]}", 'path to the Gemfile' do |value|
+      opts.on '--gemfile=PATH', "path to the Gemfile #{default :gemfile}" do |value|
         options[:gemfile] = File.expand_path(value)
       end
 
@@ -53,18 +54,15 @@ module Bundix
         options[:lock] = true
       end
 
-      opts.on '-u', '--bundle-update [gems]',
-              'Ignores the existing lockfile. Resolve then updates lockfile. Taking a list of gems or updating ' \
+      opts.on '-u', '--bundle-update[=GEMS]',
+              'ignores the existing lockfile. Resolve then updates lockfile. Taking a list of gems or updating ' \
               'all gems if no list is given (implies --bundle-lock)' do |gems|
         options[:update_lock] = gems || true
       end
 
-      opts.on '-c', '--bundle-cache', 'Package your needed .gem files into your application' do
-        options[:cache] = true
-      end
-
-      opts.on "--bundle-cache-path=#{options[:bundle_cache_path]}", 'Path to pack built gems' do |value|
-        options[:bundle_cache_path] = value
+      opts.on '-c', '--bundle-cache[=DIRECTORY]',
+              "package .gem files into directory #{default :bundle_cache_path}" do |dir|
+        options[:cache] = dir || DEFAULTS[:bundle_cache_path]
       end
 
       opts.on '-v', '--version', 'show the version of bundix' do
@@ -76,6 +74,10 @@ module Bundix
         system('env')
         exit
       end
+    end
+
+    def default(key)
+      "(default: #{DEFAULTS[key]})"
     end
   end
 end
