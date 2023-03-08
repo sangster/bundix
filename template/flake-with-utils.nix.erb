@@ -1,0 +1,43 @@
+{
+  description = "<%= project %>";
+
+  inputs = {
+    nixpkgs.url = github:NixOS/nixpkgs;
+    flake-utils.url = github:numtide/flake-utils;
+  };
+
+  outputs = { self, nixpkgs, flake-utils }:
+    flake-utils.lib.eachDefaultSystem (system:
+      let
+        name = "<%= project %>";
+        version = "0.0.1";
+        pkgs = import nixpkgs { inherit system; };
+
+        gems = pkgs.bundlerEnv {
+          name = "${pname}-${version}-bundler-env";
+          ruby = pkgs.<%= ruby %>;
+          gemfile = <%= gemfile_path %>;
+          lockfile = <%= lockfile_path %>;
+          gemset = <%= gemset_path %>;
+        };
+      in {
+        packages = {
+          default = stdenv.mkDerivation {
+            inherit pname version;
+            buildInputs = [
+              gems
+              gems.ruby
+            ];
+          };
+          gems = gems;
+        };
+
+        devShell = pkgs.mkShell {
+          buildInputs = [
+            gems
+            gems.ruby
+          ];
+        };
+      }
+    );
+}

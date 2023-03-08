@@ -64,16 +64,16 @@ module Bundix
     def handle_init
       return unless options[:init]
 
-      if File.file?('shell.nix')
-        warn "won't override existing shell.nix but here is what it'd look like:"
-        puts shell_nix_string
+      if File.file?('flake.nix')
+        warn "won't override existing flake.nix but here is what it'd look like:"
+        puts flake_nix_string
       else
-        File.write('shell.nix', shell_nix_string)
+        File.write('flake.nix', flake_nix_string)
       end
     end
 
-    def shell_nix_string
-      Nix::Template.new(SHELL_NIX_TEMPLATE)
+    def flake_nix_string
+      Nix::Template.new(options[:init_template])
                    .call(ruby: options[:init], **options)
     end
 

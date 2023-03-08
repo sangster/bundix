@@ -5,10 +5,16 @@ require 'optparse'
 module Bundix
   # Parses commandline options.
   class CommandLineOptions < OptionParser
+    FLAKE_NIX_TEMPLATES = {
+      'default' => '../../template/flake.nix.erb',
+      'flake-utils' => '../../template/flake-with-utils.nix.erb'
+    }.transform_values { |path| Pathname(__dir__).join(path).freeze }.freeze
+
     DEFAULTS = {
       bundle_cache_path: './vendor/bundle',
       gemfile: './Gemfile',
       gemset: './gemset.nix',
+      init_template: FLAKE_NIX_TEMPLATES['default'],
       lockfile: './Gemfile.lock',
       project: File.basename(Dir.pwd),
       ruby_derivation: 'ruby'
@@ -25,8 +31,21 @@ module Bundix
 
     def make_options(opts) # rubocop:disable Metrics/AbcSize,Metrics/MethodLength
       opts.on '-i', '--init[=RUBY_DERIVATION]',
-              "initialize a new shell.nix for nix-shell (won't overwrite old ones)" do |ruby|
+              "initialize a new flake.nix for 'nix develop' (won't overwrite old ones)" do |ruby|
         options[:init] = ruby || DEFAULTS[:ruby_derivation]
+      end
+
+      opts.on '-t', '--init-template=TEMPLATE',
+              "the flake.nix template to use. may be #{template_list}, " \
+              'or a filename (default: default)' do |template|
+        options[:init_template] =
+          if FLAKE_NIX_TEMPLATES.key?(template)
+            FLAKE_NIX_TEMPLATES[template]
+          elsif File.readable?(template)
+            template
+          else
+            raise OptionParser::InvalidArgument, "--init-template=#{template}"
+          end
       end
 
       opts.on '-p', '--init-project=NAME',
@@ -78,6 +97,10 @@ module Bundix
 
     def default(key)
       "(default: #{DEFAULTS[key]})"
+    end
+
+    def template_list
+      FLAKE_NIX_TEMPLATES.keys.map { |str| "'#{str}'" }.join(', ')
     end
   end
 end

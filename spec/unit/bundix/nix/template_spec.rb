@@ -17,22 +17,52 @@ RSpec.describe Bundix::Nix::Template do
     end
 
     context 'with the default shell.nix template' do
-      let(:template_path) { Bundix::SHELL_NIX_TEMPLATE }
+      let :template_path do
+        Bundix::CommandLineOptions::FLAKE_NIX_TEMPLATES['default']
+      end
 
       it 'renders bundlerEnv nix code' do
         expect(nix_code).to eq <<~EXPECTED_NIX
-          with (import <nixpkgs> {});
-          let
-            env = bundlerEnv {
-              name = "test-project-bundler-env";
-              ruby = test-ruby;
-              gemfile  = ./test-gemfile;
-              lockfile = ./test-lockfile;
-              gemset   = ./test-gemset;
+          {
+            description = "test-project";
+
+            inputs = {
+              nixpkgs.url = github:NixOS/nixpkgs;
             };
-          in stdenv.mkDerivation {
-            name = "test-project";
-            buildInputs = [ env ];
+
+            outputs = { self, nixpkgs }:
+              let
+                name = "test-project";
+                system = "x86_64-linux";
+                version = "0.0.1";
+                pkgs = import nixpkgs { inherit system; };
+
+                gems = pkgs.bundlerEnv {
+                  name = "${pname}-${version}-bundler-env";
+                  ruby = pkgs.test-ruby;
+                  gemfile = ./test-gemfile;
+                  lockfile = ./test-lockfile;
+                  gemset = ./test-gemset;
+                };
+              in {
+                packages.${system} = {
+                  default = stdenv.mkDerivation {
+                    inherit pname version;
+                    buildInputs = [
+                      gems
+                      gems.ruby
+                    ];
+                  };
+                  gems = gems;
+                };
+
+                devShell.${system} = pkgs.mkShell {
+                  buildInputs = [
+                    gems
+                    gems.ruby
+                  ];
+                };
+              };
           }
         EXPECTED_NIX
       end
