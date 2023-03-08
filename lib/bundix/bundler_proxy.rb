@@ -45,8 +45,16 @@ module Bundix
       def with_bundler_env
         System.temp_env(**env) do
           Bundler.reset!
+          monkey_patch_definition(Bundler.definition)
           yield
         end
+      end
+
+      def monkey_patch_definition(definition)
+        # Stop Bundler from complaining about the host system's ruby version or
+        # platform being different than the Gemfile specifies. We're not using
+        # Bundler to load rubygems, so we don't need these to match.
+        definition.define_singleton_method(:validate_runtime!) { true }
       end
     end
   end

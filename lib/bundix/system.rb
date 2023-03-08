@@ -71,7 +71,7 @@ module Bundix
       # Temporarily modify {ENV} for the duration of the given block.
       def temp_env(**env)
         prev_env = env.to_h { |k, _| [k, ENV.fetch(k, nil)] }
-        env.each { |k, v| ENV[k] = v }
+        env.each { |k, v| ENV[k] = (v.to_s if v) }
         yield
       ensure
         prev_env.each { |k, v| ENV[k] = v }

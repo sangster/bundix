@@ -55,8 +55,8 @@ module Bundix
     end
 
     def nix_prefetch_url(url, dir: CACHE_DIR)
-      FileUtils.mkdir_p(dir)
-      file = File.join(dir, url.gsub(/[^\w-]+/, '_'))
+      FileUtils.mkdir_p(dir.to_s)
+      file = File.join(dir.to_s, url.gsub(/[^\w-]+/, '_'))
 
       download(file, url) unless File.size?(file)
       return unless File.size?(file)
