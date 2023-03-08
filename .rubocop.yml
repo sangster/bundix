@@ -28,3 +28,6 @@ Naming/FileName:
 RSpec/DescribeClass:
   Exclude:
     - 'spec/integration/**/*_spec.rb'
+
+RSpec/NestedGroups:
+  Max: 5

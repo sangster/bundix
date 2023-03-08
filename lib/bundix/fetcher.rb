@@ -5,15 +5,25 @@ require 'fileutils'
 module Bundix
   # Fetches gems from local and remote sources.
   class Fetcher
-    def download(file, url)
-      warn "Downloading #{file} from #{url}"
+    attr_reader :bundler_settings
+
+    # @param bundler_settings [Bundler::Settings,nil] Optional bundler settings
+    #   to provide credentials for remote fetchers.
+    def initialize(bundler_settings: nil)
+      @bundler_settings = bundler_settings
+    end
+
+    # @param dest [#to_s] The filename to save the downloaded gem to.
+    # @param url [URI,String] The HTTP, HTTPS, or local file to download.
+    def download(dest, url)
+      warn "Downloading #{dest} from #{url}"
       uri = URI(url)
 
       case uri.scheme
       when nil # local file path
-        FileUtils.cp(url, file)
+        FileUtils.cp(url, dest.to_s)
       when 'http', 'https'
-        HttpFetcher.new.download(file, uri)
+        HttpFetcher.new(uri, bundler_settings: bundler_settings).download(dest)
       else
         raise 'Unsupported URL scheme'
       end

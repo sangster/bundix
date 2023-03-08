@@ -3,7 +3,9 @@
 require 'base64'
 
 RSpec.describe Bundix::Fetcher do
-  subject(:cmd) { described_class.new }
+  subject(:cmd) { described_class.new(bundler_settings: bundler_settings) }
+
+  let(:bundler_settings) { nil }
 
   describe '#download' do
     let(:file) { 'some-file' }

@@ -8,10 +8,12 @@ RSpec.shared_context 'with dir' do |bundler_credential: nil|
   let(:tmpdir) { Dir.mktmpdir }
   let(:gemfile_path) { File.join(tmpdir, 'Gemfile') }
   let(:bundler_credential) { bundler_credential }
+  let(:bundler_dir) { "#{tmpdir}/.bundle" }
+  let(:bundler_settings) { Bundix::BundlerProxy::Settings.new(bundler_dir) }
 
   def write_credential
-    FileUtils.mkdir("#{tmpdir}/.bundle")
-    File.write("#{tmpdir}/.bundle/config",
+    FileUtils.mkdir(bundler_dir)
+    File.write("#{bundler_dir}/config",
                "---\nBUNDLE_127__0__0__1: #{bundler_credential}\n")
   end
 

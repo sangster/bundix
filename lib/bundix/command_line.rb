@@ -43,9 +43,10 @@ module Bundix
     end
 
     def bundle_lock
-      BundlerLock.new(options[:gemfile], options[:lockfile], update: options[:update_lock])
-                 .call
-                 .tap { |result| raise unless result }
+      BundlerProxy::Lock
+        .new(options[:gemfile], options[:lockfile], update: options[:update_lock])
+        .call
+        .tap { |result| raise unless result }
     end
 
     def lockfile_stale?(lockfile: options[:lockfile], gemfile: options[:gemfile])
@@ -55,9 +56,9 @@ module Bundix
     def handle_bundle_cache
       return unless options[:cache]
 
-      System.temp_env('BUNDLE_GEMFILE' => options[:gemfile]) do
-        raise unless System.nix_bundle_cache(options[:ruby], options[:bundle_cache_path])
-      end
+      BundlerProxy::Cache.new(options[:bundle_cache_path], options[:gemfile])
+                         .call
+                         .tap { |result| raise unless result }
     end
 
     def handle_init
@@ -76,7 +77,23 @@ module Bundix
     end
 
     def build_gemset
-      Converter.call(**options)
+      Converter.call(fetcher: fetcher, **options)
+    end
+
+    def fetcher
+      Fetcher.new(bundler_settings: bundler_settings)
+    end
+
+    def bundler_settings
+      @bundler_settings ||=
+        BundlerProxy::Settings.new(bundler_root.join('.bundle'),
+                                   ignore_config: false) # TODO: get from CLI options
+    end
+
+    def bundler_root
+      @bundler_root ||=
+        %i[gemfile lockfile gemset].map { |key| Pathname(options[key]).dirname }
+                                   .find(&:directory?)
     end
 
     def save_gemset(gemset)

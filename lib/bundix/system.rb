@@ -8,7 +8,6 @@ module Bundix
     NIX_INSTANTIATE = 'nix-instantiate'
     NIX_PREFETCH_GIT = 'nix-prefetch-git'
     NIX_PREFETCH_URL = 'nix-prefetch-url'
-    NIX_SHELL = 'nix-shell'
 
     class << self
       # Execute a process and return its STDOUT. If an optional block is given,
@@ -77,23 +76,6 @@ module Bundix
         yield
       ensure
         prev_env.each { |k, v| ENV[k] = v }
-      end
-
-      # Uses {NIX_SHELL} to execute +bundle cache+ in the given +ruby+ version.
-      #
-      # +bundle cache+ copies +.gem+ files into the +vendor/cache+ directory.
-      def nix_bundle_cache(ruby, bundle_cache_path)
-        nix_bundler(ruby, "bundle cache --all --path '#{bundle_cache_path}'")
-      end
-
-      def nix_bundler(ruby, cmd, **kwargs)
-        pp cmd
-        sh(
-          NIX_SHELL, '-p', ruby,
-          "bundler.override { ruby = #{ruby}; }",
-          '--command', cmd,
-          **kwargs
-        )
       end
     end
   end
