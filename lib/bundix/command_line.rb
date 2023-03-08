@@ -88,7 +88,7 @@ module Bundix
     def bundler_settings
       @bundler_settings ||=
         BundlerProxy::Settings.new(bundler_root.join('.bundle'),
-                                   ignore_config: false) # TODO: get from CLI options
+                                   ignore_config: options[:ignore_config])
     end
 
     def bundler_root

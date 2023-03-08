@@ -14,6 +14,7 @@ module Bundix
       bundle_cache_path: './vendor/bundle',
       gemfile: './Gemfile',
       gemset: './gemset.nix',
+      ignore_config: false,
       init_template: FLAKE_NIX_TEMPLATES['default'],
       lockfile: './Gemfile.lock',
       project: File.basename(Dir.pwd),
@@ -87,6 +88,10 @@ module Bundix
       opts.on '-c', '--bundle-cache[=DIRECTORY]',
               "package .gem files into directory #{default :bundle_cache_path}" do |dir|
         options[:cache] = dir || DEFAULTS[:bundle_cache_path]
+      end
+
+      opts.on '--bundle-ignore-config', 'ignores Bundler config files' do
+        options[:ignore_config] = true
       end
 
       opts.on '-v', '--version', 'show the version of bundix' do
