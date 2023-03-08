@@ -5,7 +5,7 @@ require 'open3'
 module Bundix
   # Helper methods for executing system processes.
   class System
-    NIX_INSTANTIATE = 'nix-instantiate'
+    NIX = 'nix'
     NIX_PREFETCH_GIT = 'nix-prefetch-git'
     NIX_PREFETCH_URL = 'nix-prefetch-url'
 
@@ -61,12 +61,11 @@ module Bundix
         ).force_encoding('UTF-8').strip
       end
 
-      # Executes {NIX_INSTANTIATE} to convert the given gemset file to JSON.
-      def nix_gemset_to_json(gemset_path)
-        sh(
-          NIX_INSTANTIATE, '--eval', '-E',
-          "builtins.toJSON (import #{Nix::Serializer.call(gemset_path)})"
-        ).strip.gsub(/\\"/, '"')[1..-2]
+      # Executes {NIX} to convert the given nix file to JSON.
+      # @param nix_file [#to_s] Path to a nix file.
+      # @return [String]
+      def nix_to_json(nix_file)
+        sh(NIX, 'eval', '--impure', '--json', '-f', nix_file.to_s).strip
       end
 
       # Temporarily modify {ENV} for the duration of the given block.

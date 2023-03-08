@@ -33,7 +33,7 @@ module Bundix
 
     def parse_gemset
       path = File.expand_path(options[:gemset].to_s)
-      File.file?(path) ? JSON.parse(System.nix_gemset_to_json(path)) : {}
+      File.file?(path) ? JSON.parse(System.nix_to_json(path)) : {}
     end
 
     private
