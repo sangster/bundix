@@ -70,6 +70,26 @@ regret it.
    }
    ```
 
+### Command-line Flags
+
+```
+$ nix run github:sangster/bundix -- --help
+Usage: bundix [options]
+    -i, --init[=RUBY_DERIVATION]     initialize a new flake.nix for 'nix develop' (won't overwrite old ones)
+    -t, --init-template=TEMPLATE     the flake.nix template to use. may be 'default', 'flake-utils', or a filename (default: default)
+    -p, --init-project=NAME          project name to use with --init (default: moo)
+        --gemset=PATH                path to the gemset.nix (default: ./gemset.nix)
+        --lockfile=PATH              path to the Gemfile.lock (default: ./Gemfile.lock)
+        --gemfile=PATH               path to the Gemfile (default: ./Gemfile)
+        --skip-gemset                do not generate gemset
+    -q, --quiet                      only output errors
+    -l, --bundle-lock                generate Gemfile.lock first
+    -u, --bundle-update[=GEMS]       ignores the existing lockfile. Resolve then updates lockfile. Taking a list of gems or updating all gems if no list is given (implies --bundle-lock)
+    -c, --bundle-cache[=DIRECTORY]   package .gem files into directory (default: ./vendor/bundle)
+    -v, --version                    show the version of bundix
+        --env                        show the environment in bundix
+```
+
 ## How & Why
 
 I'd usually just tell you to read the code yourself, but the big picture is
