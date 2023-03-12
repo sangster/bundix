@@ -28,16 +28,21 @@ RSpec.describe Bundix::Nix::Template do
 
             inputs = {
               nixpkgs.url = github:NixOS/nixpkgs;
+              bundix.url = github:sangster/bundix;
             };
 
-            outputs = { self, nixpkgs }:
+            outputs = { self, nixpkgs, bundix }:
               let
-                name = "test-project";
+                pname = "test-project";
                 system = "x86_64-linux";
                 version = "0.0.1";
-                pkgs = import nixpkgs { inherit system; };
+                pkgs = import nixpkgs {
+                  inherit system;
+                  overlays = [bundix.overlays.default];
+                };
 
-                gems = pkgs.bundlerEnv {
+                gems = pkgs.bundixEnv {
+                  inherit system;
                   name = "${pname}-${version}-bundler-env";
                   ruby = pkgs.test-ruby;
                   gemfile = ./test-gemfile;
@@ -45,22 +50,32 @@ RSpec.describe Bundix::Nix::Template do
                   gemset = ./test-gemset;
                 };
               in {
-                packages.${system} = {
-                  default = stdenv.mkDerivation {
-                    inherit pname version;
-                    buildInputs = [
-                      gems
-                      gems.ruby
-                    ];
-                  };
-                  gems = gems;
+                # Example package:
+                packages.${system}.default = pkgs.stdenv.mkDerivation {
+                  inherit gems pname version;
+                  inherit (gems) ruby;
+                  phases = "installPhase";
+                  installPhase = ''
+                    mkdir -p $out/bin
+                    cat << EOF > "$out/bin/${pname}"
+                    #!/bin/sh -e
+                    exec $gems/bin/bundle exec $ruby/bin/ruby << RUBY
+                    puts "Bundled rubygems:"
+                    Bundler.setup.gems.map(&:name).sort.each do |gem|
+                      puts " - \#{gem}"
+                    end
+                    RUBY
+                    EOF
+                    chmod +x "$out/bin/${pname}"
+                  '';
+                };
+
+                apps.${system} = {
+                  bundix = { type = "app"; program = "${pkgs.bundix}/bin/bundix"; };
                 };
 
                 devShell.${system} = pkgs.mkShell {
-                  buildInputs = [
-                    gems
-                    gems.ruby
-                  ];
+                  buildInputs = [gems gems.ruby];
                 };
               };
           }

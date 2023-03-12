@@ -8,24 +8,24 @@ module Bundix
   class Converter
     DEFAULT_OPTIONS = { quiet: false, tempfile: nil }.freeze
 
-    attr_reader :fetcher, :options, :platforms
+    attr_reader :fetcher, :options, :engines
 
     def self.call(...)
       new(...).call
     end
 
     # @params fetcher [Fetcher]
-    # @params platforms [Platforms]
+    # @params engines [Engines]
     # @params options [Hash]
-    def initialize(fetcher: Fetcher.new, platforms: Platforms.defaults,
+    def initialize(fetcher: Fetcher.new, engines: RubyEngines.defaults,
                    **options)
       @fetcher = fetcher
-      @platforms = platforms
+      @engines = engines
       @options = DEFAULT_OPTIONS.merge(**options)
     end
 
     def call
-      # reverse so git comes last
+      # reverse so git sources comes last
       lockfile.specs.reverse_each.with_object({}) do |spec, gems|
         convert_spec!(spec, gems)
       end
@@ -63,7 +63,7 @@ module Bundix
 
     def convert_single_spec(spec)
       value = { version: spec.version.to_s, source: spec_source(spec) }
-      { spec.name => value.merge(platforms: spec_platforms(spec)).merge(groups(spec)) }
+      { spec.name => value.merge(platforms: spec_engines(spec)).merge(groups(spec)) }
     rescue Bundler::Dsl::DSLError
       raise
     rescue StandardError => e
@@ -76,12 +76,11 @@ module Bundix
       Source.new(spec, fetcher).convert
     end
 
-    def spec_platforms(spec)
-      # c.f. Bundler::CurrentRuby
+    def spec_engines(spec)
       dependency_cache
         .fetch(spec.name)
         .platforms
-        .map { |platform_name| platforms[platform_name] }
+        .map { |platform| engines[platform] }
         .flatten
     end
 

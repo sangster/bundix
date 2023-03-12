@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-RSpec.describe Bundix::BundlerProxy::Settings do
+RSpec.describe Bundix::BundlerSettings do
   subject(:settings) { described_class.new(*args, **kwargs) }
 
   let(:args) { [] }

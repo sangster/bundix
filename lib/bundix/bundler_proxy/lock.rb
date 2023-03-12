@@ -25,13 +25,8 @@ module Bundix
 
       protected
 
-      def cli
-        Bundler::CLI::Lock
-          .new('remove-platform' => remove_platforms,
-               'add-platform' => add_platforms,
-               lockfile: lockfile,
-               gemfile: gemfile,
-               update: update)
+      def bundler_process
+        cli.run
       end
 
       def env
@@ -41,6 +36,17 @@ module Bundix
           'BUNDLE_GEMFILE' => gemfile,
           'BUNDLE_IGNORE_CONFIG' => (ignore_config ? 'true' : nil)
         }
+      end
+
+      private
+
+      def cli
+        Bundler::CLI::Lock
+          .new('remove-platform' => remove_platforms,
+               'add-platform' => add_platforms,
+               lockfile: lockfile,
+               gemfile: gemfile,
+               update: update)
       end
     end
   end

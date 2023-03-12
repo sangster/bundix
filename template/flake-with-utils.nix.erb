@@ -4,16 +4,21 @@
   inputs = {
     nixpkgs.url = github:NixOS/nixpkgs;
     flake-utils.url = github:numtide/flake-utils;
+    bundix.url = github:sangster/bundix;
   };
 
-  outputs = { self, nixpkgs, flake-utils }:
+  outputs = { self, nixpkgs, flake-utils, bundix }:
     flake-utils.lib.eachDefaultSystem (system:
       let
-        name = "<%= project %>";
+        pname = "<%= project %>";
         version = "0.0.1";
-        pkgs = import nixpkgs { inherit system; };
+        pkgs = import nixpkgs {
+          inherit system;
+          overlays = [bundix.overlays.default];
+        };
 
-        gems = pkgs.bundlerEnv {
+        gems = pkgs.bundixEnv {
+          inherit system;
           name = "${pname}-${version}-bundler-env";
           ruby = pkgs.<%= ruby %>;
           gemfile = <%= gemfile_path %>;
@@ -21,22 +26,30 @@
           gemset = <%= gemset_path %>;
         };
       in {
-        packages = {
-          default = stdenv.mkDerivation {
-            inherit pname version;
-            buildInputs = [
-              gems
-              gems.ruby
-            ];
-          };
-          gems = gems;
+        # Example package:
+        packages.default = pkgs.stdenv.mkDerivation {
+          inherit gems pname version;
+          inherit (gems) ruby;
+          phases = "installPhase";
+          installPhase = ''
+            mkdir -p $out/bin
+            cat << EOF > "$out/bin/${pname}"
+            #!/bin/sh -e
+            exec $gems/bin/bundle exec $ruby/bin/ruby << RUBY
+            puts "Bundled rubygems:"
+            Bundler.setup.gems.map(&:name).sort.each do |gem|
+              puts " - #{gem}"
+            end
+            RUBY
+            EOF
+            chmod +x "$out/bin/${pname}"
+          '';
         };
 
+        apps.bundix = flake-utils.lib.mkApp { drv = pkgs.bundix; };
+
         devShell = pkgs.mkShell {
-          buildInputs = [
-            gems
-            gems.ruby
-          ];
+          buildInputs = [gems gems.ruby];
         };
       }
     );

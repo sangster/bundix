@@ -39,14 +39,13 @@ module Bundix
     end
 
     def handle_bundle_lock
-      bundle_lock if (options[:lock] && lockfile_stale?) || options[:update_lock]
+      bundle_lock if options[:lock] || options[:update_lock] || lockfile_stale?
     end
 
     def bundle_lock
       BundlerProxy::Lock
         .new(options[:gemfile], options[:lockfile], update: options[:update_lock])
         .call
-        .tap { |result| raise unless result }
     end
 
     def lockfile_stale?(lockfile: options[:lockfile], gemfile: options[:gemfile])
@@ -56,9 +55,7 @@ module Bundix
     def handle_bundle_cache
       return unless options[:cache]
 
-      BundlerProxy::Cache.new(options[:cache], options[:gemfile])
-                         .call
-                         .tap { |result| raise unless result }
+      BundlerProxy::Cache.new(options[:cache], options[:gemfile]).call
     end
 
     def handle_init
@@ -78,7 +75,7 @@ module Bundix
     end
 
     def build_gemset
-      Converter.call(fetcher: fetcher, **options)
+      Bundix::BundlerProxy::Index.build(options[:lockfile]).call
     end
 
     def fetcher
@@ -87,8 +84,8 @@ module Bundix
 
     def bundler_settings
       @bundler_settings ||=
-        BundlerProxy::Settings.new(bundler_root.join('.bundle'),
-                                   ignore_config: options[:ignore_config])
+        BundlerSettings.new(bundler_root.join('.bundle'),
+                            ignore_config: options[:ignore_config])
     end
 
     def bundler_root

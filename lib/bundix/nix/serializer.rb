@@ -14,6 +14,7 @@ module Bundix
     # - {Symbol}
     # - {Pathname}
     # - {TrueClass true} and {FalseClass false}
+    # - Any object that responds to +to_nix+
     class Serializer
       using Bundix::HashWithNixOrder
 
@@ -53,16 +54,15 @@ module Bundix
         @level = level
       end
 
-      def call # rubocop:disable Metrics/AbcSize
+      def call
         case obj
         when Hash then set_template.result(binding)
         when Array then list_template.result(binding)
-        when String then obj.dump
-        when Symbol then obj.to_s.dump
+        when String, Symbol, Gem::Version then nix_string
         when Pathname then serialize_pathname(obj)
         when true, false then obj.to_s
         else
-          raise "Cannot convert to nix: #{obj.inspect}"
+          serialize_by_method(obj)
         end
       end
 
@@ -78,6 +78,10 @@ module Bundix
 
       def list_template
         @list_template ||= erb_template(LIST_TEMPLATE)
+      end
+
+      def nix_string
+        obj.is_a?(String) ? obj.dump : obj.to_s.dump
       end
 
       def erb_template(path)
@@ -107,6 +111,13 @@ module Bundix
       def serialize_pathname(path)
         str = path.to_s
         %r{/} =~ str ? str : "./#{str}"
+      end
+
+      def serialize_by_method(obj)
+        raise "Cannot serialize: #{obj.inspect}" unless obj.respond_to?(:to_nix)
+
+        nix = obj.to_nix
+        nix.is_a?(String) ? nix : self.class.call(nix, level)
       end
     end
   end

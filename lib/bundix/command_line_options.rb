@@ -55,16 +55,16 @@ module Bundix
         options[:project] = name
       end
 
-      opts.on '--gemset=PATH', "path to the gemset.nix #{default :gemset}" do |value|
-        options[:gemset] = File.expand_path(value)
-      end
-
       opts.on '--lockfile=PATH', "path to the Gemfile.lock #{default :lockfile}" do |value|
         options[:lockfile] = File.expand_path(value)
       end
 
-      opts.on '--gemfile=PATH', "path to the Gemfile #{default :gemfile}" do |value|
+      opts.on '--gemfile=PATH', "path to the existing Gemfile #{default :gemfile}" do |value|
         options[:gemfile] = File.expand_path(value)
+      end
+
+      opts.on '--gemset=PATH', "destination path of the gemset.nix #{default :gemset}" do |value|
+        options[:gemset] = File.expand_path(value)
       end
 
       opts.on '--skip-gemset', 'do not generate gemset' do
