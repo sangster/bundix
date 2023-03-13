@@ -17,8 +17,8 @@ module Bundix
             new(...).call
           end
 
-          def erb_template(root, path)
-            ERB.new(Pathname(root).join(path).read.chomp).freeze
+          def erb_template(path)
+            ERB.new(path.read.chomp).freeze
           end
 
           def order(left, right)

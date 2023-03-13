@@ -59,7 +59,7 @@ module Bundix
         write.close
         result = read.read
         Process.wait(pid)
-        raise 'child failed' if result.empty? # TODO: custom exception class
+        raise ProcessError, 'child failed' if result.empty?
 
         Marshal.load(result) # rubocop:disable Security/MarshalLoad
       end

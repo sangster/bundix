@@ -13,7 +13,7 @@ stdenv.mkDerivation {
   phases = "installPhase";
   installPhase = ''
     mkdir -p $out/{bin,share/${pname}}
-    cp -r $src/{bin,lib,template} $out/share/${pname}
+    cp -r $src/{bin,lib,templates} $out/share/${pname}
 
     cat << EOF > "$out/bin/${pname}"
     #!/bin/sh -e

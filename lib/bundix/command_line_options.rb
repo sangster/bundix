@@ -6,8 +6,8 @@ module Bundix
   # Parses commandline options.
   class CommandLineOptions < OptionParser # rubocop:disable Metrics/ClassLength
     FLAKE_NIX_TEMPLATES = {
-      'default' => '../../template/flake.nix.erb',
-      'flake-utils' => '../../template/flake-with-utils.nix.erb'
+      'default' => TEMPLATES.join('flake-nix/default.nix.erb'),
+      'flake-utils' => TEMPLATES.join('flake-nix/flake-utils.nix.erb')
     }.transform_values { |path| Pathname(__dir__).join(path).freeze }.freeze
 
     DEFAULTS = {

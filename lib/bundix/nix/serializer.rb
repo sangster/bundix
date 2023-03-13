@@ -17,11 +17,11 @@ module Bundix
     # - Any object that responds to +to_nix+
     class Serializer
       using Bundix::HashWithNixOrder
-      include Serializer::ClassMethods
+      include ClassMethods
 
       DEFAULT_WIDTH = 80
-      SET_TEMPLATE = erb_template(__dir__, '../../../template/nixer/set.erb')
-      LIST_TEMPLATE = erb_template(__dir__, '../../../template/nixer/list.erb')
+      LIST_TEMPLATE = erb_template(TEMPLATES.join('serializer/list.erb'))
+      SET_TEMPLATE = erb_template(TEMPLATES.join('serializer/set.erb'))
 
       attr_reader :compact_width, :level, :obj
 

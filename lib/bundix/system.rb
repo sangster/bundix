@@ -28,7 +28,7 @@ module Bundix
         unless block_given? ? block.call(status, stdout) : status.success?
           puts "$ #{args.join(' ')}" if $VERBOSE
           puts stdout if $VERBOSE
-          raise "command execution failed: #{status}"
+          raise ProcessError, "command execution failed: #{status}"
         end
         stdout
       end
