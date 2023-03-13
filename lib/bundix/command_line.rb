@@ -16,7 +16,7 @@ module Bundix
     # @param options [Hash] Options which affect the operation of the
     #   application. If none are given, {ARGV} will be parsed for command-line
     #   flags.
-    # @see CommandLineOptions for available option keys.
+    # @see CommandLine::Options for available option keys.
     def initialize(**options)
       @options = options.empty? ? parse_options : options
     end
@@ -31,7 +31,7 @@ module Bundix
     private
 
     def parse_options
-      op = CommandLineOptions.new
+      op = CommandLine::Options.new
       op.parse!
 
       $VERBOSE = !op.options[:quiet]
@@ -77,10 +77,6 @@ module Bundix
     def build_gemset
       Gemset::Builder
         .call(**options.slice(:gemfile, :lockfile, :bundler_env_format))
-    end
-
-    def fetcher
-      Fetcher.new(bundler_settings: bundler_settings)
     end
 
     def bundler_settings

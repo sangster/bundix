@@ -9,7 +9,7 @@ module Bundix
     # versions for different platforms, and those versions may vary in their own
     # transitive dependencies.
     class Builder
-      attr_reader :definition, :engines, :groups, :lockfile_parser
+      attr_reader :engines, :gemfile, :groups, :lockfile
 
       def self.call(bundler_env_format: nil, **kwargs)
         if bundler_env_format
@@ -26,8 +26,8 @@ module Bundix
       # @see https://bundler.io/guides/groups.html
       def initialize(gemfile:, lockfile:, groups: [:default],
                      engines: RubyEngines.defaults)
-        @definition = Bundler::Definition.build(gemfile, lockfile, false)
-        @lockfile_parser = definition.locked_gems
+        @gemfile = gemfile
+        @lockfile = lockfile
         @groups = groups
         @engines = engines
       end
@@ -41,15 +41,24 @@ module Bundix
         { dependencies: dependencies, platforms: platforms }
       end
 
-      private
-
       def dependencies
-        definition.dependencies_for(groups).map(&:name)
+        @dependencies ||= definition.dependencies_for(groups).map(&:name)
       end
 
       def platforms
-        PlatformGems.new(definition, all_lockfile_specs, groups: groups).call
+        @platforms ||=
+          PlatformGems.new(definition, all_lockfile_specs, groups: groups).call
       end
+
+      def definition
+        @definition ||= Bundler::Definition.build(gemfile, lockfile, false)
+      end
+
+      def lockfile_parser
+        definition.locked_gems
+      end
+
+      private
 
       def all_lockfile_specs
         specs = lockfile_sources.flat_map { |source| source_specs(source).to_a }

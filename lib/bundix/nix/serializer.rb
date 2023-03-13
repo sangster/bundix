@@ -16,8 +16,8 @@ module Bundix
     # - {TrueClass true} and {FalseClass false}
     # - Any object that responds to +to_nix+
     class Serializer
-      using Bundix::HashWithNixOrder
       include ClassMethods
+      using HashOrder
 
       DEFAULT_WIDTH = 80
       LIST_TEMPLATE = erb_template(TEMPLATES.join('serializer/list.erb'))

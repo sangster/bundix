@@ -23,13 +23,17 @@ module Bundix
 
       # {Serializer Serializes} a {Bundler::Source::Git} into nix format.
       class Git < BundlerSource
+        def self.sha256(spec)
+          rev = spec.source.options.fetch('revision')
+          System.nix_prefetch_git(spec.source.cache_path, rev)['sha256']
+        end
+
         def to_nix
-          rev = source.options.fetch('revision')
           {
             type: 'git',
             url: source.options.fetch('uri').to_s,
-            rev: rev,
-            sha256: System.nix_prefetch_git(source.cache_path, rev)['sha256'],
+            rev: source.options.fetch('revision'),
+            sha256: self.class.sha256(spec),
             fetchSubmodules: !source.submodules.nil?
           }
         end
@@ -47,11 +51,15 @@ module Bundix
 
       # {Serializer Serializes} a {Bundler::Source::Rubygems} into nix format.
       class Rubygems < BundlerSource
+        def self.sha256(spec)
+          Nix::Hash32.call(spec.checksum)
+        end
+
         def to_nix
           {
             remotes: remotes,
             type: 'gem',
-            sha256: Nix::Hash32.call(spec.checksum)
+            sha256: self.class.sha256(spec)
           }
         end
 

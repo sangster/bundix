@@ -1,42 +1,49 @@
 # frozen_string_literal: true
 
 RSpec.shared_context 'with gemset' do |options|
-  let :gemset_options do
-    { deps: false, lockfile: '', gemset: '' }.merge(options)
+  let(:gemset_builder) { Bundix::Gemset::Builder.new(**options) }
+  let(:gemset) { gemset_builder.call }
+  let :gemset_sources do
+    gemset_builder.definition
+                  .locked_gems
+                  .specs
+                  .map { Bundix::Nix::BundlerSource.build(_1) }
   end
-  let(:converter) do
-    Bundix::Converter.new(fetcher: PrefetchStub.new, **gemset_options)
-  end
-  let(:gemset) { converter.call }
-
-  around do |test|
-    Bundler.instance_variable_set(:@root, spec_data_dir)
-
-    old_gemfile = ENV.fetch('BUNDLE_GEMFILE', nil)
-    ENV['BUNDLE_GEMFILE'] = gemset_options[:gemfile].to_s
-
-    test.call
-  ensure
-    ENV['BUNDLE_GEMFILE'] = old_gemfile if old_gemfile
-    Bundler.reset!
-  end
-end
-
-class PrefetchStub
-  def nix_prefetch_url(*_args)
-    'nix_prefetch_url_hash'
+  let :gemset_platforms do
+    Hash
+      .new { |hash, key| hash[key] = {} }
+      .tap do |platforms|
+        gemset_builder.definition.locked_gems.specs.each do |spec|
+          platforms[spec.platform.to_s][spec.name] = {
+            dependencies: spec.dependencies.map(&:name),
+            groups: ['default'],
+            source: Bundix::Nix::BundlerSource.build(spec).to_nix,
+            version: spec.version.to_s
+          }
+        end
+      end
   end
 
-  def nix_prefetch_git(_uri, _revision)
-    '{"sha256": "nix_prefetch_git_hash"}'
-  end
-
-  def fetch_local_hash(_spec)
-    # Example hash taken from `man nix-hash`.
+  let :sha256 do
     '5891b5b522d5df086d0ff0b110fbd9d21bb4fc7163af34d08286a2e846f6be03'
   end
 
-  def fetch_remotes_hash(_spec, _remotes)
-    'fetch_remotes_hash_hash'
+  before do
+    allow(Bundix::Nix::BundlerSource::Git).to receive(:sha256).and_return(sha256)
+    allow(Bundix::Nix::BundlerSource::Rubygems).to receive(:sha256).and_return(sha256)
+    allow(gemset_builder).to receive(:platforms) { gemset_platforms }
   end
+
+  # around do |test|
+  #   Bundler.instance_variable_set(:@root, spec_data_dir)
+
+  #   old_gemfile = ENV.fetch('BUNDLE_GEMFILE', nil)
+  #   ENV['BUNDLE_GEMFILE'] = options[:gemfile].to_s
+
+  #   binding.pry
+  #   test.call
+  # ensure
+  #   ENV['BUNDLE_GEMFILE'] = old_gemfile if old_gemfile
+  #   Bundler.reset!
+  # end
 end
