@@ -25,6 +25,7 @@ module Bundix
         spec.dependencies
             .select(&:runtime?)
             .map(&:name)
+            .tap { _1.delete('bundler') }
             .then { _1.empty? ? nil : _1 }
       end
 
