@@ -10,3 +10,5 @@ module Bundix
   CACHE_DIR = Pathname(ENV['XDG_CACHE_HOME'] || "#{Dir.home}/.cache").join('bundix').freeze
   SHA256_32 = /^[a-z0-9]{52}$/.freeze
 end
+
+loader.eager_load

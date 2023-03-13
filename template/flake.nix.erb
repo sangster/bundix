@@ -25,24 +25,28 @@
         gemset = <%= gemset_path %>;
       };
     in {
-      # Example package:
-      packages.${system}.default = pkgs.stdenv.mkDerivation {
-        inherit gems pname version;
-        inherit (gems) ruby;
-        phases = "installPhase";
-        installPhase = ''
-          mkdir -p $out/bin
-          cat << EOF > "$out/bin/${pname}"
-          #!/bin/sh -e
-          exec $gems/bin/bundle exec $ruby/bin/ruby << RUBY
-          puts "Bundled rubygems:"
-          Bundler.setup.gems.map(&:name).sort.each do |gem|
-            puts " - #{gem}"
-          end
-          RUBY
-          EOF
-          chmod +x "$out/bin/${pname}"
-        '';
+      packages.${system} = {
+        # Example package:
+        default = pkgs.stdenv.mkDerivation {
+          inherit gems pname version;
+          ruby = gems.wrappedRuby;
+          phases = "installPhase";
+          installPhase = ''
+            mkdir -p $out/bin
+            cat << EOF > "$out/bin/${pname}"
+            #!/bin/sh -e
+            exec $ruby/bin/ruby << RUBY
+            require 'bundler'
+            puts "Bundled rubygems:"
+            Bundler.setup.gems.map(&:name).sort.each do |gem|
+              puts " - #{gem}"
+            end
+            RUBY
+            EOF
+            chmod +x "$out/bin/${pname}"
+          '';
+        };
+        bundled-gems = gems;
       };
 
       apps.${system} = {
@@ -50,7 +54,7 @@
       };
 
       devShell.${system} = pkgs.mkShell {
-        buildInputs = [gems gems.ruby];
+        buildInputs = [gems gems.wrappedRuby];
       };
     };
 }

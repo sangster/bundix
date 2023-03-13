@@ -5,7 +5,7 @@ require 'pathname'
 require 'tmpdir'
 
 module Bundix
-  # Provides a command-line interface to {Converter}.
+  # Executes Bundix with the options given by the user via the command-line.
   class CommandLine
     attr_reader :options
 
@@ -75,7 +75,8 @@ module Bundix
     end
 
     def build_gemset
-      Bundix::BundlerProxy::Index.build(options[:lockfile]).call
+      Gemset::Builder
+        .call(**options.slice(:gemfile, :lockfile, :bundler_env_format))
     end
 
     def fetcher

@@ -4,7 +4,7 @@ require 'optparse'
 
 module Bundix
   # Parses commandline options.
-  class CommandLineOptions < OptionParser
+  class CommandLineOptions < OptionParser # rubocop:disable Metrics/ClassLength
     FLAKE_NIX_TEMPLATES = {
       'default' => '../../template/flake.nix.erb',
       'flake-utils' => '../../template/flake-with-utils.nix.erb'
@@ -19,8 +19,11 @@ module Bundix
       lockfile: './Gemfile.lock',
       project: File.basename(Dir.pwd),
       ruby_derivation: 'ruby',
+      ruby_platform: 'ruby',
       skip_gemset: false
     }.freeze
+
+    LOCAL_PLATFORM = Gem::Platform.local.to_s.freeze
 
     attr_accessor :options
 
@@ -31,7 +34,55 @@ module Bundix
 
     private
 
-    def make_options(opts) # rubocop:disable Metrics/AbcSize,Metrics/MethodLength
+    def make_options(opts)
+      logging_options(opts)
+
+      opts.separator("\nInput/Output files:")
+      input_file_options(opts)
+      output_file_options(opts)
+
+      opts.separator("\nflake.nix creation:")
+      init_options(opts)
+
+      opts.separator("\nBundler utilities:")
+      bundle_options(opts)
+
+      opts.separator("\nBundix environment:")
+      command_options(opts)
+    end
+
+    def logging_options(opts)
+      opts.on '-q', '--quiet', 'only output errors' do
+        options[:quiet] = true
+      end
+    end
+
+    def input_file_options(opts)
+      opts.on '--gemfile=PATH', "path to the existing Gemfile #{default :gemfile}" do |value|
+        options[:gemfile] = File.expand_path(value)
+      end
+
+      opts.on '--lockfile=PATH', "path to the Gemfile.lock #{default :lockfile}" do |value|
+        options[:lockfile] = File.expand_path(value)
+      end
+    end
+
+    def output_file_options(opts)
+      opts.on '--gemset=PATH', "destination path of the gemset.nix #{default :gemset}" do |value|
+        options[:gemset] = File.expand_path(value)
+      end
+
+      opts.on '--bundler-env-format[=RUBY_PLATFORM]',
+              "Export a gemset that can be used directly with bundlerEnv #{default :ruby_platform}" do |platform|
+        options[:bundler_env_format] = platform || DEFAULTS[:ruby_platform]
+      end
+
+      opts.on '--skip-gemset', 'do not generate gemset' do
+        options[:skip_gemset] = true
+      end
+    end
+
+    def init_options(opts) # rubocop:disable Metrics/MethodLength
       opts.on '-i', '--init[=RUBY_DERIVATION]',
               "initialize a new flake.nix for 'nix develop' (won't overwrite old ones)" do |ruby|
         options[:init] = ruby || DEFAULTS[:ruby_derivation]
@@ -40,41 +91,26 @@ module Bundix
       opts.on '-t', '--init-template=TEMPLATE',
               "the flake.nix template to use. may be #{template_list}, " \
               'or a filename (default: default)' do |template|
-        options[:init_template] =
-          if FLAKE_NIX_TEMPLATES.key?(template)
-            FLAKE_NIX_TEMPLATES[template]
-          elsif File.readable?(template)
-            template
-          else
-            raise OptionParser::InvalidArgument, "--init-template=#{template}"
-          end
+        options[:init_template] = parse_template(template)
       end
 
       opts.on '-p', '--init-project=NAME',
               "project name to use with --init #{default :project}" do |name|
         options[:project] = name
       end
+    end
 
-      opts.on '--lockfile=PATH', "path to the Gemfile.lock #{default :lockfile}" do |value|
-        options[:lockfile] = File.expand_path(value)
+    def parse_template(template)
+      if FLAKE_NIX_TEMPLATES.key?(template)
+        FLAKE_NIX_TEMPLATES[template]
+      elsif File.readable?(template)
+        template
+      else
+        raise OptionParser::InvalidArgument, "--init-template=#{template}"
       end
+    end
 
-      opts.on '--gemfile=PATH', "path to the existing Gemfile #{default :gemfile}" do |value|
-        options[:gemfile] = File.expand_path(value)
-      end
-
-      opts.on '--gemset=PATH', "destination path of the gemset.nix #{default :gemset}" do |value|
-        options[:gemset] = File.expand_path(value)
-      end
-
-      opts.on '--skip-gemset', 'do not generate gemset' do
-        options[:skip_gemset] = true
-      end
-
-      opts.on '-q', '--quiet', 'only output errors' do
-        options[:quiet] = true
-      end
-
+    def bundle_options(opts) # rubocop:disable Metrics/MethodLength
       opts.on '-l', '--bundle-lock', 'generate Gemfile.lock first' do
         options[:lock] = true
       end
@@ -93,7 +129,9 @@ module Bundix
       opts.on '--bundle-ignore-config', 'ignores Bundler config files' do
         options[:ignore_config] = true
       end
+    end
 
+    def command_options(opts) # rubocop:disable Metrics/MethodLength
       opts.on '-v', '--version', 'show the version of bundix' do
         puts VERSION
         exit
@@ -101,6 +139,11 @@ module Bundix
 
       opts.on '--env', 'show the environment in bundix' do
         system('env')
+        exit
+      end
+
+      opts.on '--platform', 'show the platform of this host' do
+        puts LOCAL_PLATFORM
         exit
       end
     end

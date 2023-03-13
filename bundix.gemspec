@@ -6,7 +6,7 @@ Gem::Specification.new do |s|
   s.name        = 'bundix'
   s.version     = version
   s.licenses    = ['MIT']
-  s.homepage    = 'https://github.com/manveru/bundix'
+  s.homepage    = 'https://github.com/sangster/bundix'
   s.summary     = 'Creates Nix packages from Gemfiles.'
   s.description = 'Creates Nix packages from Gemfiles.'
   s.authors     = ["Michael 'manveru' Fellinger"]
@@ -16,7 +16,6 @@ Gem::Specification.new do |s|
   s.bindir      = 'bin'
   s.executables = ['bundix']
   s.required_ruby_version = '>= 2.7.0'
-
   s.metadata['rubygems_mfa_required'] = 'true'
 
   s.add_dependency 'bundler', '~> 2.4'

@@ -16,12 +16,12 @@ RSpec.describe Bundix::Nix::Template do
       }
     end
 
-    context 'with the default shell.nix template' do
+    context 'with the default flake.nix template' do
       let :template_path do
         Bundix::CommandLineOptions::FLAKE_NIX_TEMPLATES['default']
       end
 
-      it 'renders bundlerEnv nix code' do
+      it 'renders flake.nix' do
         expect(nix_code).to eq <<~EXPECTED_NIX
           {
             description = "test-project";
@@ -50,24 +50,28 @@ RSpec.describe Bundix::Nix::Template do
                   gemset = ./test-gemset;
                 };
               in {
-                # Example package:
-                packages.${system}.default = pkgs.stdenv.mkDerivation {
-                  inherit gems pname version;
-                  inherit (gems) ruby;
-                  phases = "installPhase";
-                  installPhase = ''
-                    mkdir -p $out/bin
-                    cat << EOF > "$out/bin/${pname}"
-                    #!/bin/sh -e
-                    exec $gems/bin/bundle exec $ruby/bin/ruby << RUBY
-                    puts "Bundled rubygems:"
-                    Bundler.setup.gems.map(&:name).sort.each do |gem|
-                      puts " - \#{gem}"
-                    end
-                    RUBY
-                    EOF
-                    chmod +x "$out/bin/${pname}"
-                  '';
+                packages.${system} = {
+                  # Example package:
+                  default = pkgs.stdenv.mkDerivation {
+                    inherit gems pname version;
+                    ruby = gems.wrappedRuby;
+                    phases = "installPhase";
+                    installPhase = ''
+                      mkdir -p $out/bin
+                      cat << EOF > "$out/bin/${pname}"
+                      #!/bin/sh -e
+                      exec $ruby/bin/ruby << RUBY
+                      require 'bundler'
+                      puts "Bundled rubygems:"
+                      Bundler.setup.gems.map(&:name).sort.each do |gem|
+                        puts " - \#{gem}"
+                      end
+                      RUBY
+                      EOF
+                      chmod +x "$out/bin/${pname}"
+                    '';
+                  };
+                  bundled-gems = gems;
                 };
 
                 apps.${system} = {
@@ -75,7 +79,7 @@ RSpec.describe Bundix::Nix::Template do
                 };
 
                 devShell.${system} = pkgs.mkShell {
-                  buildInputs = [gems gems.ruby];
+                  buildInputs = [gems gems.wrappedRuby];
                 };
               };
           }

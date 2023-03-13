@@ -1,49 +1,54 @@
 # frozen_string_literal: true
 
 module Bundix
-  # {Serializer Serializes} a Bundler spec into nix format.
-  class BundlerSpecification
-    attr_reader :engines, :spec
+  module Nix
+    # {Serializer Serializes} a Bundler spec into nix format.
+    class BundlerSpecification
+      attr_reader :engines, :spec
 
-    def initialize(spec, engines: RubyEngines.defaults)
-      @spec = spec
-      @engines = engines
-    end
+      def initialize(spec, engines: RubyEngines.defaults)
+        @spec = spec
+        @engines = engines
+      end
 
-    def to_nix
-      {
-        dependencies: dependencies,
-        groups: groups,
-        source: Nix::BundlerSource.build(spec),
-        version: version
-      }.merge(engine)
-    end
+      def to_nix
+        {
+          dependencies: dependencies,
+          groups: groups,
+          source: Nix::BundlerSource.build(spec),
+          version: version,
+          platforms: engine
+        }.compact
+      end
 
-    private
+      def dependencies
+        spec.dependencies
+            .select(&:runtime?)
+            .map(&:name)
+            .then { _1.empty? ? nil : _1 }
+      end
 
-    def version
-      [spec.version, (platform unless ruby_platform?)].compact.join('-')
-    end
+      private
 
-    def platform
-      @platform ||= spec.platform.to_s
-    end
+      def version
+        [spec.version, (platform unless ruby_platform?)].compact.join('-')
+      end
 
-    def ruby_platform?
-      platform == Gem::Platform::RUBY
-    end
+      def platform
+        @platform ||= spec.platform.to_s
+      end
 
-    def groups
-      spec.groups.empty? ? %w[default] : spec.groups
-    end
+      def ruby_platform?
+        platform == Gem::Platform::RUBY
+      end
 
-    def dependencies
-      spec.dependencies.select(&:runtime?).map(&:name)
-    end
+      def groups
+        spec.groups.empty? ? %w[default] : spec.groups
+      end
 
-    def engine
-      eng = engines[spec.platform]
-      eng == engines.default ? {} : { platforms: eng }
+      def engine
+        engines[spec.platform] unless spec.platform == Gem::Platform::RUBY
+      end
     end
   end
 end

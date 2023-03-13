@@ -11,15 +11,16 @@ module Bundix
   # @see https://github.com/NixOS/nixpkgs/blob/48e4e2a1/pkgs/development/ruby-modules/bundled-common/functions.nix#L44-L51
   # @see https://guides.rubygems.org/gems-with-extensions/
   class RubyEngines
-    DEFAULT = { engine: 'ruby' }.freeze
+    DEFAULT = [{ engine: 'ruby' }].freeze
 
     # TODO: Aside from jruby, how many of these are still in Euse?
     # TODO: Are these the correct strings used gem platforms?
     # @see +gem help platforms+
     PLATFORM_ENGINES = {
-      Gem::Platform::RUBY => [DEFAULT, { engine: 'rbx' }, { engine: 'maglev' }],
-      'mri' => [DEFAULT, { engine: 'maglev' }],
+      Gem::Platform::RUBY => DEFAULT + [{ engine: 'rbx' }, { engine: 'maglev' }],
+      'mri' => DEFAULT + [{ engine: 'maglev' }],
       'rbx' => [{ engine: 'rbx' }],
+      'java' => [{ engine: 'jruby' }],
       'jruby' => [{ engine: 'jruby' }],
       'mswin' => [{ engine: 'mswin' }],
       'mswin64' => [{ engine: 'mswin64' }],
@@ -38,10 +39,12 @@ module Bundix
       end
     end.to_h.freeze
 
+    DEFAULT_SUPPORTED = PLATFORM_ENGINES.merge(PLATFORM_VERSION_ENGINES)
+
     attr_reader :supported
 
     def self.defaults
-      new(PLATFORM_ENGINES.merge(PLATFORM_VERSION_ENGINES))
+      @defaults ||= new(DEFAULT_SUPPORTED)
     end
 
     # @param supported [Hash<String, Array<Hash<Symbol,String>>>]
@@ -55,10 +58,16 @@ module Bundix
       supported.fetch(key.to_s, default)
     end
 
-    # @return [Hash<Symbol, String>] The default platform for gems that don't
-    #   specify one.
+    # @return [Array<Hash<Symbol, String>>] The default platform for gems that
+    #   don't specify one.
     def default
       DEFAULT
+    end
+
+    def inspect
+      return super unless supported.equal?(DEFAULT_SUPPORTED)
+
+      "#<#{self.class.name}:#{object_id} defaults>"
     end
   end
 end

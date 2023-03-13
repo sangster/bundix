@@ -60,7 +60,7 @@ let
       rest = builtins.tail deps;
       gem = platformGem dep platforms;
       newGemset = gemset // { ${dep} = gem; };
-      newDeps = rest ++ (builtins.filter (d: !(newGemset ? ${d})) gem.dependencies);
+      newDeps = rest ++ (builtins.filter (d: !(newGemset ? ${d})) (gem.dependencies or []));
     in buildPlatformGemset newGemset platforms newDeps;
 
   platformGem = name: platforms:
@@ -74,9 +74,7 @@ let
       then (if builtins.isNull gem then rest else gem)
       else assert assertMsg (fallback != null) "gemset: platforms.ruby.${name} missing"; fallback;
 
-  getGem = platform: gem:
-    let gems = importedGemset.platforms.${platform};
-    in if gems ? ${gem} then gems.${gem} else null;
+  getGem = platform: gem: lib.attrByPath ["platforms" platform gem] null importedGemset;
 in {
   inherit (gemFiles) gemfile lockfile;
   gemset = platformGemset envPlatform;
