@@ -15,7 +15,8 @@ module Bundix
     class Cache < Base
       attr_reader :all_sources, :gemfile, :path
 
-      # @param [#to_s] The directory to store cached gems into.
+      # @param path [#to_s] The directory to store cached gems into.
+      # @param gemfile [#to_s] Path to the +Gemfile+.
       def initialize(path, gemfile, all_sources: true, **kwargs)
         super(**kwargs)
         @path = path

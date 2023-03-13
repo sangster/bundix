@@ -427,6 +427,27 @@
     };
     version = "2.4.2";
   };
+  webrick = {
+    groups = ["default" "development"];
+    platforms = [];
+    source = {
+      remotes = ["https://rubygems.org"];
+      sha256 = "1d4cvgmxhfczxiq5fr534lmizkhigd15bsx5719r5ds7k7ivisc7";
+      type = "gem";
+    };
+    version = "1.7.0";
+  };
+  yard = {
+    dependencies = ["webrick"];
+    groups = ["development"];
+    platforms = [];
+    source = {
+      remotes = ["https://rubygems.org"];
+      sha256 = "0p1if8g9ww6hlpfkphqv3y1z0rbqnnrvb38c5qhnala0f8qpw6yk";
+      type = "gem";
+    };
+    version = "0.9.28";
+  };
   zeitwerk = {
     groups = ["default"];
     platforms = [];
