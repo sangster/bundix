@@ -42,11 +42,11 @@ module Bundix
         input_file_options(opts)
         output_file_options(opts)
 
-        opts.separator("\nflake.nix creation:")
-        init_options(opts)
-
         opts.separator("\nBundler utilities:")
         bundle_options(opts)
+
+        opts.separator("\nflake.nix creation:")
+        init_options(opts)
 
         opts.separator("\nBundix environment:")
         command_options(opts)
@@ -73,13 +73,44 @@ module Bundix
           options[:gemset] = File.expand_path(value)
         end
 
-        opts.on '--bundler-env-format[=RUBY_PLATFORM]',
-                "Export a gemset that can be used directly with bundlerEnv #{default :ruby_platform}" do |platform|
+        opts.on '--bundler-env[=PLATFORM]',
+                "export a nixpkgs#bundlerEnv compatible gemset #{default :ruby_platform}" do |platform|
           options[:bundler_env_format] = platform || DEFAULTS[:ruby_platform]
         end
 
         opts.on '--skip-gemset', 'do not generate gemset' do
           options[:skip_gemset] = true
+        end
+      end
+
+      def parse_template(template)
+        if FLAKE_NIX_TEMPLATES.key?(template)
+          FLAKE_NIX_TEMPLATES[template]
+        elsif File.readable?(template)
+          template
+        else
+          raise OptionParser::InvalidArgument, "--init-template=#{template}"
+        end
+      end
+
+      def bundle_options(opts) # rubocop:disable Metrics/MethodLength
+        opts.on '-l', '--lock', 'lock the gemfile gems into the lockfile' do
+          options[:lock] = true
+        end
+
+        opts.on '-u', '--update[=GEMS]',
+                'update the lockfile with new versions of the specified ' \
+                'gems, or each one, if none given (implies --lock)' do |gems|
+          options[:update_lock] = gems || true
+        end
+
+        opts.on '-c', '--bundle-cache[=DIRECTORY]',
+                "package .gem files into directory #{default :bundle_cache_path}" do |dir|
+          options[:cache] = dir || DEFAULTS[:bundle_cache_path]
+        end
+
+        opts.on '--ignore-bundler-configs', 'ignores Bundler config files' do
+          options[:ignore_config] = true
         end
       end
 
@@ -101,49 +132,18 @@ module Bundix
         end
       end
 
-      def parse_template(template)
-        if FLAKE_NIX_TEMPLATES.key?(template)
-          FLAKE_NIX_TEMPLATES[template]
-        elsif File.readable?(template)
-          template
-        else
-          raise OptionParser::InvalidArgument, "--init-template=#{template}"
-        end
-      end
-
-      def bundle_options(opts) # rubocop:disable Metrics/MethodLength
-        opts.on '-l', '--bundle-lock', 'generate Gemfile.lock first' do
-          options[:lock] = true
-        end
-
-        opts.on '-u', '--bundle-update[=GEMS]',
-                'ignores the existing lockfile. Resolve then updates lockfile. Taking a list of gems or updating ' \
-                'all gems if no list is given (implies --bundle-lock)' do |gems|
-          options[:update_lock] = gems || true
-        end
-
-        opts.on '-c', '--bundle-cache[=DIRECTORY]',
-                "package .gem files into directory #{default :bundle_cache_path}" do |dir|
-          options[:cache] = dir || DEFAULTS[:bundle_cache_path]
-        end
-
-        opts.on '--bundle-ignore-config', 'ignores Bundler config files' do
-          options[:ignore_config] = true
-        end
-      end
-
       def command_options(opts) # rubocop:disable Metrics/MethodLength
         opts.on '-v', '--version', 'show the version of bundix' do
           puts VERSION
           exit
         end
 
-        opts.on '--env', 'show the environment in bundix' do
+        opts.on '--env', 'show the environment in Bundix' do
           system('env')
           exit
         end
 
-        opts.on '--platform', 'show the platform of this host' do
+        opts.on '--platform', 'show the gem platform of this host' do
           puts LOCAL_PLATFORM
           exit
         end
