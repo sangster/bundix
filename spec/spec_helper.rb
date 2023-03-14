@@ -2,7 +2,11 @@
 
 unless ENV.key?('SKIP_COVERAGE')
   require 'simplecov'
-  Pathname(__dir__).join('../coverage').tap { _1.rmtree if _1.directory? }
+
+  # SimpleCov generates files with odd permissions
+  Pathname(__dir__).join('../coverage/assets').glob('**/*')
+                   .map { _1.directory? ? _1.chmod(0o755) : _1.chmod(0o644) }
+
   SimpleCov.start do
     enable_coverage :branch
     primary_coverage :branch

@@ -18,7 +18,7 @@ RSpec.describe Bundix::Nix::Template do
 
     context 'with the default flake.nix template' do
       let :template_path do
-        Bundix::CommandLine::Options::FLAKE_NIX_TEMPLATES['default']
+        Bundix::FLAKE_NIX_TEMPLATES['default']
       end
 
       it 'renders flake.nix' do
