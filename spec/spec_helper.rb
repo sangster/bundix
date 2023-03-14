@@ -16,7 +16,8 @@ end
 
 require 'bundix'
 require 'pry-byebug'
-Dir[Pathname.new(__dir__).join('support', '**', '*.rb')].sort.each { |f| require f }
+
+Pathname.new(__dir__).glob('support/**/*.rb').map { require _1.realpath }
 
 RSpec.configure do |config|
   config.disable_monkey_patching!

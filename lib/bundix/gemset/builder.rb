@@ -9,13 +9,32 @@ module Bundix
     # versions for different platforms, and those versions may vary in their own
     # transitive dependencies.
     class Builder
+      # Download RubyGems index, with SHA-256 hashes
+      class RubyGemsApi
+        def initialize(source)
+          @source = source
+        end
+
+        def call(names)
+          @source.fetchers
+                 .first # TODO: use all fetchers? or "api fetcher?"
+                 .specs_with_retry(names, @source)
+        end
+      end
+
       attr_reader :engines, :gemfile, :groups, :lockfile
 
-      def self.call(bundler_env_format: nil, **kwargs)
-        if bundler_env_format
-          EnvFormatBuilder.new(bundler_env_format, **kwargs).call
-        else
-          new(**kwargs).call
+      class << self
+        def call(...)
+          build(...).call
+        end
+
+        def build(bundler_env_format: nil, **kwargs)
+          if bundler_env_format
+            EnvFormatBuilder.new(bundler_env_format, **kwargs)
+          else
+            new(**kwargs)
+          end
         end
       end
 
@@ -86,14 +105,11 @@ module Bundix
         BundlerProxy::CloneGit.new(source).call.specs
       end
 
-      # Download RubyGems index, with SHA-256 hashes
       def cached_rubygem_specs
         @cached_rubygem_specs ||= Hash.new do |hash, source|
-          names = sources_map.fetch(source, []).map(&:name)
-
-          hash[source] = source.fetchers
-                               .first # TODO: use all fetchers? or "api fetcher?"
-                               .specs_with_retry(names, source)
+          hash[source] =
+            RubyGemsApi.new(source)
+                       .call(sources_map.fetch(source, []).map(&:name))
         end
       end
 

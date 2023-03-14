@@ -33,17 +33,4 @@ RSpec.shared_context 'with gemset' do |options|
     allow(Bundix::Nix::BundlerSource::Rubygems).to receive(:sha256).and_return(sha256)
     allow(gemset_builder).to receive(:platforms) { gemset_platforms }
   end
-
-  # around do |test|
-  #   Bundler.instance_variable_set(:@root, spec_data_dir)
-
-  #   old_gemfile = ENV.fetch('BUNDLE_GEMFILE', nil)
-  #   ENV['BUNDLE_GEMFILE'] = options[:gemfile].to_s
-
-  #   binding.pry
-  #   test.call
-  # ensure
-  #   ENV['BUNDLE_GEMFILE'] = old_gemfile if old_gemfile
-  #   Bundler.reset!
-  # end
 end

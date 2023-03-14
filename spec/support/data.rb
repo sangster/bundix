@@ -2,7 +2,7 @@
 
 module SpecDataDirHelpers
   def spec_data_dir
-    @spec_data_dir ||= Pathname.new(File.expand_path('./data', __dir__))
+    @spec_data_dir ||= Pathname(__dir__).join('./data').expand_path.freeze
   end
 end
 

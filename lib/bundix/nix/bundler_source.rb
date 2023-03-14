@@ -4,7 +4,7 @@ module Bundix
   module Nix
     # {Serializer Serializes} a Bundler spec's source into nix format.
     class BundlerSource
-      attr_reader :source, :spec
+      attr_reader :spec
 
       def self.build(spec)
         case spec.source
@@ -18,7 +18,10 @@ module Bundix
 
       def initialize(spec)
         @spec = spec
-        @source = spec.source
+      end
+
+      def source
+        spec.source
       end
 
       # {Serializer Serializes} a {Bundler::Source::Git} into nix format.
