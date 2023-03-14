@@ -38,17 +38,17 @@ module Bundix
       def make_options(opts)
         logging_options(opts)
 
-        opts.separator("\nInput/Output files:")
+        opts.separator("\nInput/Output options:")
         input_file_options(opts)
         output_file_options(opts)
 
-        opts.separator("\nBundler utilities:")
+        opts.separator("\nBundler options:")
         bundle_options(opts)
 
-        opts.separator("\nflake.nix creation:")
+        opts.separator("\nflake.nix options:")
         init_options(opts)
 
-        opts.separator("\nBundix environment:")
+        opts.separator("\nEnvironment options:")
         command_options(opts)
       end
 
