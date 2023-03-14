@@ -19,7 +19,7 @@ module Bundix
       # @param gemfile [#to_s] Path to the +Gemfile+.
       def initialize(path, gemfile, all_sources: true, **kwargs)
         super(**kwargs)
-        @path = path
+        @path = Pathname(path)
         @gemfile = gemfile
         @all_sources = all_sources
       end
@@ -27,6 +27,7 @@ module Bundix
       protected
 
       def bundler_process
+        path.mkpath
         cli.run
       end
 
@@ -44,7 +45,7 @@ module Bundix
           .new('all-platforms' => false, # TODO: get from CLI args
                'cache-path' => cache_dir,
                all: all_sources,
-               path: path,
+               path: path.to_s,
                gemfile: gemfile)
       end
     end
