@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-require_relative '../lib/bundix'
+require 'bundler'
+Bundler.require(:default)
 
 Bundix::CommandLine.call

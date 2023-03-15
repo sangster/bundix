@@ -9,18 +9,16 @@
 }:
 stdenv.mkDerivation {
   inherit gems pname src version;
-  inherit (gems) ruby;
+  ruby = gems.wrappedRuby;
   phases = "installPhase";
   installPhase = ''
-    mkdir -p $out/{bin,share/${pname}}
-    cp -r $src/{bin,lib,templates} $out/share/${pname}
+    mkdir -p $out/{bin,share/${pname}/bin}
+    cp -r $src/bin/* $out/share/${pname}/bin/
 
     cat << EOF > "$out/bin/${pname}"
     #!/bin/sh -e
     export PATH="${lib.makeBinPath runtimeInputs}:$PATH"
-    exec $gems/bin/bundle exec \
-      $ruby/bin/ruby \
-      $out/share/${pname}/bin/${pname} "\$@"
+    exec $ruby/bin/ruby $out/share/${pname}/bin/${pname} "\$@"
     EOF
     chmod +x "$out/bin/${pname}"
   '';

@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
-version = /VERSION\s*=\s*'([^']+)'/.match(File.read('lib/bundix/version.rb'))[1]
+require_relative 'lib/bundix/version'
 
 Gem::Specification.new do |s|
   s.name        = 'bundix'
-  s.version     = version
+  s.version     = Bundix::VERSION
   s.licenses    = ['MIT']
   s.homepage    = 'https://github.com/sangster/bundix'
   s.summary     = 'Creates Nix packages from Gemfiles.'

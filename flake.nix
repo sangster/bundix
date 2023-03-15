@@ -8,15 +8,31 @@
 
   outputs = { self, nixpkgs, flake-utils }:
     {
-      overlays.default = import ./nix/overlay.nix rec {
-        pname = "bundix";
-        src = ./.;
-        extraConfigPaths = [
-          "${./.}/lib" # .gemspec file references `Bundix::Version`
-          "${./.}/${pname}.gemspec"
-        ];
-        versionRubyFile = ./lib/bundix/version.rb;
-      };
+      overlays.default = final: prev:
+        let
+          pname = "bundix";
+          src = ./.;
+          lib = final.callPackage ./nix {};
+          version = lib.extractBundixVersion ./lib/bundix/version.rb;
+
+          gems = with final; bundixEnv {
+            inherit pname ruby system;
+            name = "${pname}-${version}-bundler-env";
+            gemdir = src;
+          };
+
+          bundix = final.callPackage ./nix/derivation.nix {
+            inherit gems pname src version;
+            runtimeInputs = with final; [
+              git
+              nix
+              nix-prefetch-git
+            ];
+          };
+        in {
+          inherit bundix;
+          bundixEnv = args: final.bundlerEnv (args // lib.platformGemset args);
+        };
     } //
     flake-utils.lib.eachDefaultSystem (system:
       let
