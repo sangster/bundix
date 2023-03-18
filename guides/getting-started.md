@@ -102,7 +102,7 @@ local machine is used.[^platform]
 
 [^platform]:
   I used a 64-bit linux machine in this example. Your `Gemfile.lock`
-  may have something differenthere.
+  may have something different here.
 
 You probably noticed that the `nokogiri` entry under `GEMS` lists the version as
 `1.14.2-x86_64-linux`, even though your `Gemfile` specified that we need version

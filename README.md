@@ -4,7 +4,7 @@ applications with the [Nix](https://nixos.org/download.html) package manager.
 
 # Basic Usage
 
-**Note**: See [./guides/getting-started.md](Getting Started) for a more detailed
+**Note**: See [Getting Started](./guides/getting-started.md) for a more detailed
 description of setting up a new ruby project.
 
 > Please note that in order to actually use this gem you must have Nix installed.
