@@ -163,8 +163,8 @@ entries in the `GEM` section are meant to fulfill the requirements listed here.
 
 ### gemset.nix
 
-Your project's `gemset.nix` file is almost the same as its `Gemfile.lock`. It's
-purpose is to catalogue all your needed gems, along with the groups and
+Your project's `gemset.nix` is essentially the nix-version of `Gemfile.lock`.
+Its purpose is to catalogue all your needed gems, along with the groups and
 platforms they support. Unlike the `Gemfile.lock`, this file also includes the
 [SHA-256 hash](https://en.wikipedia.org/wiki/SHA-2#Applications) of each gem.
 
@@ -259,11 +259,10 @@ The section for each of the listed gems have mostly the same attributes:
 
  - `dependencies` (optional): Transitive dependencies of that gem. if any
  - `groups` (optional): What group, if any, the gem belongs to in the `Gemfile`.
- - `platforms` (optional): Despite the name `platforms`, this attribute
-   describes the type of
-   [ruby engine](https://bundler.io/v1.12/man/gemfile.5.html#ENGINE-engine-)
-   this gem requires. This attribute will be absent if the gem is a generic
-   `ruby` gem that can run on any engine.
+ - `platforms` (optional): Despite its name, this attribute describes the [ruby
+    engine](https://bundler.io/v1.12/man/gemfile.5.html#ENGINE-engine-) this gem
+    requires. This attribute will be absent if the gem is a generic `ruby` gem
+    that can run on any engine.
  - `source`: Describes where nix can download the gem. See below for more
    details.
  - `version`: The exact version number of the gem.
@@ -336,10 +335,12 @@ parts:
 #### Importing the Bundix overlay
 
 ``` nix
-pkgs = import nixpkgs {
-  inherit system;
-  overlays = [bundix.overlays.default];
-};
+{
+  pkgs = import nixpkgs {
+    inherit system;
+    overlays = [bundix.overlays.default];
+  };
+}
 ```
 
 The Bundix overlay gives your flake access to the `bundixEnv` function that will
@@ -354,13 +355,15 @@ Now we use the `pkgs.bundixEnv` nix function to convert your project's
 package.
 
 ``` nix
-gems = pkgs.bundixEnv {
-  inherit system;
-  name = "${pname}-${version}-gems";
-  groups = ["default"];
-  ruby = pkgs.ruby;
-  gemdir = ./.;
-};
+{
+  gems = pkgs.bundixEnv {
+    inherit system;
+    name = "${pname}-${version}-gems";
+    groups = ["default"];
+    ruby = pkgs.ruby;
+    gemdir = ./.;
+  };
+}
 ```
 
 `bundixEnv` accepts the same attribute arguments as
@@ -384,18 +387,20 @@ For demonstration purposes, the example `flake.nix` includes a simple sample
 application. Here's the nix portion:
 
 ```nix
-packages.${system}.default = pkgs.stdenv.mkDerivation {
-  inherit gems pname version;
-  ruby = gems.wrappedRuby;
-  phases = "installPhase";
-  installPhase = ''
-    mkdir -p $out/bin
-    cat << EOF > "$out/bin/${pname}"
-    #!/bin/sh
-    exec $ruby/bin/ruby <<< "# ... ruby code here ..."
-    chmod +x "$out/bin/${pname}"
-  '';
-};
+{
+  packages.${system}.default = pkgs.stdenv.mkDerivation {
+    inherit gems pname version;
+    ruby = gems.wrappedRuby;
+    phases = "installPhase";
+    installPhase = ''
+      mkdir -p $out/bin
+      cat << EOF > "$out/bin/${pname}"
+      #!/bin/sh
+      exec $ruby/bin/ruby <<< "# ... ruby code here ..."
+      chmod +x "$out/bin/${pname}"
+    '';
+  };
+}
 ```
 
 This package builds a single shell script (`$out/bin/bundix-project` in our
@@ -433,3 +438,39 @@ dependencies (with `Bundler.setup`), you'll get an error like:
 ```
 Could not find minitest-5.18.0 in locally installed gems (Bundler::GemNotFound)
 ```
+
+#### Development with nix develop
+
+You can skip this step if you're planning to package a project that's complete,
+or packaging someone else's ruby project. But, if you're planning continue
+development on your project, [`nix
+develop`](https://nixos.org/manual/nix/stable/command-ref/new-cli/nix3-develop.html)
+can be a useful tool. It's purpose is to provide a shell with all your projects
+development dependencies available. You can ensure this includes your gems (and
+preconfigured `ruby` and `bunder` commands) by including them as `buildInputs`:
+
+```nix
+{
+  devShell.${system} = pkgs.mkShell {
+    buildInputs = with gems; [basicEnv wrappedRuby];
+  };
+}
+```
+
+However, we setup our example project so our `gems` package includes
+runtime dependencies only. During development, you'll want to run your unit
+tests, and you'll need the `minitest` gem for that. Bundix can let you create a
+version of your gems, that includes everything, with nix's `override` feature:
+
+```nix
+{
+  devShell.${system} = pkgs.mkShell {
+    buildInputs = with gems.override { groups = null; }; [basicEnv wrappedRuby];
+  };
+}
+```
+
+Specify `groups = null;` will create a bundle with gems from all your groups,
+but if you explicitly want to include gems from only the `default` and
+`development` groups, you can set `groups = ["development"];`. The default group
+is always built.
