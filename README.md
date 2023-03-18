@@ -17,7 +17,7 @@ To use Bundix, all your project needs is a `Gemfile` describing your project's
 ruby dependencies. If you already have a `Gemfile.lock`, Bundix will use it, but
 it will generate one if you don't.
 
-``` sh
+```sh
 $ nix run github:sangster/bundix
 $ nix run nixpkgs#git -- add gemset.nix
 ```
@@ -31,7 +31,7 @@ To integrate Bundix into your Nix package, you'll need to make 3 changes:
 For example, if you have a `import nixpkgs` line in your flake, add a `overlays
 = [ ...];` attribute to it. For example:
 
-``` nix
+```nix
 {
   inputs.bundix.url = github:sangster/bundix;
 
@@ -51,7 +51,7 @@ Now we use the `pkgs.bundixEnv` nix function to convert your project's
 `gemset.nix` into a nix derivation that will be used as a runtime dependency for
 your own ruby package. Here is an example usage:
 
-``` nix
+```nix
 gems = pkgs.bundixEnv {
   name = "bundix-project-gems";
   ruby = pkgs.ruby;
@@ -74,7 +74,7 @@ Finally, you need to integrate your new gem bundle into your package. An easy
 method is to use its `wrappedRuby` package as the `ruby` used to execute your
 ruby code.
 
-``` nix
+```nix
 pkgs.stdenv.mkDerivation {
   phases = "installPhase";
   installPhase = ''
@@ -93,7 +93,7 @@ pkgs.stdenv.mkDerivation {
 If your project doesn't have a +flake.nix+ yet, Bundix can make an example one
 for you:
 
-``` sh
+```sh
 $ nix run github:sangster/bundix -- --init
 ```
 
@@ -134,33 +134,6 @@ Environment options:
         --platform                   show the gem platform of this host
 ```
 
-## How & Why
-
-I'd usually just tell you to read the code yourself, but the big picture is
-that bundix tries to fetch a hash for each of your bundle dependencies and
-store them all together in a format that Nix can understand and is then used by
-`bundlerEnv`.
-
-I wrote this new version of bundix because I became frustrated with the poor
-performance of the old bundix, and wanted to save both time and bandwidth, as
-well as learn more about Nix.
-
-For each gem, it first tries to look for an existing gem in the bundler cache
-(usually generated via `bundle package`), and if that fails it goes through
-each remote and tries to fetch the gem from there. If the remote happens to be
-[rubygems.org](http://rubygems.org/) we ask the API first for a hash of the
-gem, and then ask the Nix store whether we have this version already. Only if
-that also fails do we download the gem.
-
-As an added bonus I also implemented parsing the `gemset.nix` if it already
-exists, and get hashes from there directly, that way updating an existing
-`gemset.nix` only takes a few seconds.
-
-The output from bundix should be as stable as possible, to make auditing diffs
-easier, that's why I also implemented a pretty printer for the `gemset.nix`.
-
-I hope you enjoy using bundix as much as I do, and if you don't, let me know.
-
 ## Development
 
 If you wish to further develop this project, [`Rakefile`](./Rakefile), provides
@@ -168,7 +141,7 @@ some utilities which may help you. Furthermore, running `nix develop` will start
 a new shell where `rake`, and other development dependencies are available. Some
 example `rake` commands (via `nix develop` in these examples):
 
-``` sh
+```sh
 $ nix develop -c rake -T           # List available rake commands
 $ nix develop -c rake              # Default rake command: all tests and linters
 $ nix develop -c rake dev:console  # Open a ruby REPL shell
@@ -187,11 +160,19 @@ command-line arguments must be preceeded with `--`; for example:
 
 ## Closing words
 
-For any questions or suggestions, please file an issue on Github or ask in
-`#nixos` on [Freenode](http://freenode.net/).
+For any questions or suggestions, please file an issue on Github.
 
-Big thanks go out to
-[Charles Strahan](http://www.cstrahan.com/) for his awesome work bringing Ruby to Nix,
-[zimbatm](https://zimbatm.com/) for being a good rubber duck and tester, and
-[Alexander Flatter](https://github.com/aflatter) for the original bundix. I
-couldn't have done this without you guys.
+If you're curious about the rationale behind the different versions of Bundix,
+see the [Motivations Guide](./guides/motivation.md).
+
+A huge shoutout to Michael 'manveru' Fellinger! As someone who writes ruby
+professionally, without his work on Bundix 2, I never would have had the
+opportunity to discover how great nix is.
+
+From Bundix 2:
+
+> Big thanks go out to [Charles Strahan](http://www.cstrahan.com/) for his
+> awesome work bringing Ruby to Nix, [zimbatm](https://zimbatm.com/) for being a
+> good rubber duck and tester, and [Alexander
+> Flatter](https://github.com/aflatter) for the original bundix. I couldn't have
+> done this without you guys.

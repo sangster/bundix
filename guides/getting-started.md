@@ -30,17 +30,17 @@ $ cd ./bundix-project/
 $ cat <<RUBY > ./Gemfile
 source 'https://rubygems.org'
 gem 'nokogiri', '1.14.2'
-gem 'minitest', '5.18.0', group: :development
+gem 'test-unit, '3.5.7, group: :development
 RUBY
 ```
 
  - [Nokogiri](https://nokogiri.org/) will allow your hypothetical project to
    easily work with XML and HTML.
- - [Minitest](https://github.com/minitest/minitest) provides an API for writing
-   unit tests. Unlike Nokogiri, Minitest is a "development dependency." You need
-   it to help you write your application, but it won't necessarily be needed
-   by your app at runtime. For this reason, we've added it to your Gemfile's
-   `development` group.
+ - [test-unit](https://test-unit.github.io/) provides a framework for writing
+   unit tests. Unlike Nokogiri, test-unit is a "development dependency." You
+   need it to help you write your application, but it won't necessarily be
+   needed by your app at runtime. For this reason, we've added it to your
+   Gemfile's `development` group.
 
 ### Generating your project's nix files
 
@@ -69,17 +69,19 @@ one similar to this:
 GEM
   remote: https://rubygems.org/
   specs:
-    minitest (5.18.0)
     nokogiri (1.14.2-x86_64-linux)
       racc (~> 1.4)
+    power_assert (2.0.3)
     racc (1.6.2)
+    test-unit (3.5.7)
+      power_assert
 
 PLATFORMS
   x86_64-linux
 
 DEPENDENCIES
-  minitest (= 5.18.0)
   nokogiri (= 1.14.2)
+  test-unit (= 3.5.7)
 
 BUNDLED WITH
    2.4.6
@@ -92,8 +94,8 @@ summary of its major sections:
 
  The `GEM` section summarises all the gems that need to be downloaded from
 `rubygems.org` to build this project. Even though our `Gemfile`only listed 2
-gems, this section includes 3. `racc` was pulled in as a transitive dependency
-of `nokogiri`.
+gems, this section includes 4. `racc` was pulled in as a transitive dependency
+of `nokogiri` and `power_assert` from `test-unit`.
 
 #### PLATFORMS
 
@@ -138,13 +140,15 @@ GEM
   remote: https://rubygems.org/
   specs:
     mini_portile2 (2.8.1)
-    minitest (5.18.0)
     nokogiri (1.14.2)
       mini_portile2 (~> 2.8.0)
       racc (~> 1.4)
     nokogiri (1.14.2-x86_64-linux)
       racc (~> 1.4)
+    power_assert (2.0.3)
     racc (1.6.2)
+    test-unit (3.5.7)
+      power_assert
 
 PLATFORMS
   ruby
@@ -179,9 +183,9 @@ The `gemset.nix` generated in your project should look like this[^platform2]:
 [^platform2]: Again, your file will certainly look different if your local
               platform is something other than `x86_64-linux`.
 
-``` nix
+```nix
 {
-  dependencies = ["minitest" "nokogiri"];
+  dependencies = ["nokogiri" "test-unit"];
   platforms = {
     ruby = {
       mini_portile2 = {
@@ -192,15 +196,6 @@ The `gemset.nix` generated in your project should look like this[^platform2]:
         };
         version = "2.8.1";
       };
-      minitest = {
-        groups = ["development"];
-        source = {
-          remotes = ["https://rubygems.org"];
-          sha256 = "0ic7i5z88zcaqnpzprf7saimq2f6sad57g5mkkqsrqrcd6h3mx06";
-          type = "gem";
-        };
-        version = "5.18.0";
-      };
       nokogiri = {
         dependencies = ["mini_portile2" "racc"];
         source = {
@@ -210,6 +205,15 @@ The `gemset.nix` generated in your project should look like this[^platform2]:
         };
         version = "1.14.2";
       };
+      power_assert = {
+        groups = ["development"];
+        source = {
+          remotes = ["https://rubygems.org"];
+          sha256 = "1y2c5mvkq7zc5vh4ijs1wc9hc0yn4mwsbrjch34jf11pcz116pnd";
+          type = "gem";
+        };
+        version = "2.0.3";
+      };
       racc = {
         source = {
           remotes = ["https://rubygems.org"];
@@ -217,6 +221,16 @@ The `gemset.nix` generated in your project should look like this[^platform2]:
           type = "gem";
         };
         version = "1.6.2";
+      };
+      test-unit = {
+        dependencies = ["power_assert"];
+        groups = ["development"];
+        source = {
+          remotes = ["https://rubygems.org"];
+          sha256 = "1rdhpdi8mlk7jwv9pxz3mhchpd5q93jxzijqhw334w5yv1ajl5hf";
+          type = "gem";
+        };
+        version = "3.5.7";
       };
     };
     x86_64-linux = {
@@ -242,9 +256,10 @@ dependencies
 platforms
   ruby
     mini_portile2
-    minitest
     nokogiri
+    power_assert
     racc
+    test-unit
   x86_64-linux
     nokogiri
 ```
@@ -289,7 +304,7 @@ Because we ran Bundix with the `--init` flag, it created an example `flake.nix`
 file for your project. Here's a truncated version that highlights the important
 parts:
 
-``` nix
+```nix
 {
   inputs.bundix.url = github:sangster/bundix;
 
@@ -334,7 +349,7 @@ parts:
 
 #### Importing the Bundix overlay
 
-``` nix
+```nix
 {
   pkgs = import nixpkgs {
     inherit system;
@@ -354,7 +369,7 @@ Now we use the `pkgs.bundixEnv` nix function to convert your project's
 `gemset.nix` into a nix derivation that provides all the gems to your own ruby
 package.
 
-``` nix
+```nix
 {
   gems = pkgs.bundixEnv {
     inherit system;
@@ -375,11 +390,12 @@ with the addition of two:
    and `bundixEnv` will attempt to figure out the correct `platform` from that.
 
 In this example, we've also set `groups = ["default"]`. Our `Gemfile` included
-`minitest` in its `development` group. We don't need to include development
-dependencies in our package, so this instructs Bundix to only build gems from
-the default group (`nokogiri`). If `groups` is unspecified, every gem will be
-included.
+`test-unit`[^transitive] in its `development` group. We don't need to include
+development dependencies in our package, so this instructs Bundix to only build
+gems from the default group (`nokogiri`). If `groups` is unspecified, every gem
+will be included.
 
+[^transitive]: And its transitive dependency, `power_assert`.
 
 #### An example program
 
@@ -436,7 +452,7 @@ the dev-dependencies (with `Bundler.setup(:development)`) or *all* the
 dependencies (with `Bundler.setup`), you'll get an error like:
 
 ```
-Could not find minitest-5.18.0 in locally installed gems (Bundler::GemNotFound)
+Could not find test-unit-3.5.7, power_assert-2.0.3 in locally installed gems (Bundler::GemNotFound)
 ```
 
 #### Development with nix develop
@@ -457,10 +473,10 @@ preconfigured `ruby` and `bunder` commands) by including them as `buildInputs`:
 }
 ```
 
-However, we setup our example project so our `gems` package includes
-runtime dependencies only. During development, you'll want to run your unit
-tests, and you'll need the `minitest` gem for that. Bundix can let you create a
-version of your gems, that includes everything, with nix's `override` feature:
+However, we setup our example project so our `gems` package includes runtime
+dependencies only. During development, you'll want to run your unit tests, and
+you'll need the `test-unit` gem for that. Bundix can let you create a version of
+your gems, that includes everything, with nix's `override` feature:
 
 ```nix
 {
