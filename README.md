@@ -144,10 +144,11 @@ a new shell where `rake`, and other development dependencies are available. Some
 example `rake` commands (via `nix develop` in these examples):
 
 ```sh
-$ nix develop -c rake -T           # List available rake commands
-$ nix develop -c rake              # Default rake command: all tests and linters
-$ nix develop -c rake dev:console  # Open a ruby REPL shell
-$ nix develop -c rake dev:guard    # Begin automated test-runner
+$ nix develop -c rake -T            # List available rake commands
+$ nix develop -c rake               # Default rake command: all tests and linters
+$ nix develop -c rake dev:console   # Open a ruby REPL shell
+$ nix develop -c rake dev:guard     # Begin automated test-runner
+$ nix develop -c rake docs:generate # Generate ruby documentation
 ```
 
 ### Building
