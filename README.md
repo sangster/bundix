@@ -41,7 +41,7 @@ For example, if you have a `import nixpkgs` line in your flake, add a `overlays
         system = "x86_64-linux";
         overlays = [bundix.overlays.default];
       };
-    in { ... }
+    in { ... };
 }
 ```
 
@@ -52,12 +52,14 @@ Now we use the `pkgs.bundixEnv` nix function to convert your project's
 your own ruby package. Here is an example usage:
 
 ```nix
-gems = pkgs.bundixEnv {
-  name = "bundix-project-gems";
-  ruby = pkgs.ruby;
-  gemdir = ./.;
-  platform = "x86_64-linux";
-};
+{
+  gems = pkgs.bundixEnv {
+    name = "bundix-project-gems";
+    ruby = pkgs.ruby;
+    gemdir = ./.;
+    platform = "x86_64-linux";
+  };
+}
 ```
 
 `bundixEnv` accepts the same attribute arguments as
@@ -85,7 +87,7 @@ pkgs.stdenv.mkDerivation {
     EOF
     chmod +x "$out/bin/my-app"
   '';
-};
+}
 ```
 
 ### Generate an example `flake.nix`
@@ -163,7 +165,7 @@ command-line arguments must be preceeded with `--`; for example:
 For any questions or suggestions, please file an issue on Github.
 
 If you're curious about the rationale behind the different versions of Bundix,
-see the [Motivations Guide](./guides/motivation.md).
+see the [Motivations Guide](./guides/motivations.md).
 
 A huge shoutout to Michael 'manveru' Fellinger! As someone who writes ruby
 professionally, without his work on Bundix 2, I never would have had the

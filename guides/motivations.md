@@ -1,8 +1,8 @@
-# Motivation
+# Motivations
 
 This guide describes the reasoning behind Bundix and why it works how it does.
 
-## Bundix 2 Motivation
+## Bundix 2 Motivations
 
 See [Bundix v2.5.1](https://github.com/nix-community/bundix/tree/2.5.1).
 
@@ -31,7 +31,7 @@ See [Bundix v2.5.1](https://github.com/nix-community/bundix/tree/2.5.1).
 >
 > I hope you enjoy using bundix as much as I do, and if you don't, let me know.
 
-## Bundix 3 Motivation
+## Bundix 3 Motivations
 
 Bundix 2 is an incredible tool, but after two years of daily use, I've stumbled
 across a few areas where it needs improvement. Notably:
