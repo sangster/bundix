@@ -14,11 +14,15 @@ module Bundix
       end
 
       def method_missing(name, *args, &block)
-        template_vars.key?(name) ? template_vars[name] : super
+        if args.empty? && (attr = path_attr(name))
+          path_for(send(attr))
+        else
+          template_vars.key?(name) ? template_vars[name] : super
+        end
       end
 
       def respond_to_missing?(name, include_private = false)
-        template_vars.key?(name) || super
+        template_vars.key?(name) || path_attr(name) || super
       end
 
       # @return [Binding]
@@ -30,16 +34,14 @@ module Bundix
         Serializer.call(Pathname(file).relative_path_from(Pathname('./')))
       end
 
-      def gemfile_path
-        path_for(gemfile)
-      end
+      private
 
-      def lockfile_path
-        path_for(lockfile)
-      end
+      def path_attr(name)
+        str = name.to_s
+        return nil unless str.end_with?('_path')
 
-      def gemset_path
-        path_for(gemset)
+        attr = str[...-5].to_sym
+        attr if respond_to?(attr)
       end
     end
   end

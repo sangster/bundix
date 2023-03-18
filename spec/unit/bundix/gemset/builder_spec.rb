@@ -1,23 +1,22 @@
 # frozen_string_literal: true
 
 RSpec.describe Bundix::Gemset::Builder do
-  subject(:builder) { described_class.new(**options) }
+  subject(:builder) { described_class.new(definition, **options) }
+
+  let(:definition) { Bundler::Definition.build(gemfile, lockfile, false) }
+  let(:options) { {} }
 
   describe '.build' do
-    subject(:builder) { described_class.build(**options) }
+    subject(:builder) { described_class.build(definition, **options) }
 
-    let :other_options do
-      { gemfile: 'gemfile', lockfile: 'lockfile' }
-    end
+    let(:definition) { instance_double(Bundler::Definition, groups: []) }
 
     context 'when no platform is provided' do
-      let(:options) { other_options }
-
       it { expect(builder).to be_a described_class }
     end
 
     context 'when a platform is provided' do
-      let(:options) { other_options.merge(bundler_env_format: 'some-platform') }
+      let(:options) { { bundler_env_format: 'some-platform' } }
 
       it { expect(builder).to be_a Bundix::Gemset::EnvFormatBuilder }
     end
@@ -34,14 +33,11 @@ RSpec.describe Bundix::Gemset::Builder do
     end
 
     context 'when using the "./bundler-audit/" test data' do
-      let(:options) do
-        {
-          gemfile: 'spec/support/data/bundler-audit/Gemfile',
-          lockfile: 'spec/support/data/bundler-audit/Gemfile.lock'
-        }
-      end
+      include_context 'with bundle', 'spec/support/data/bundler-audit/'
 
       let(:mock_rubygems_result) do
+        rubygems = builder.lockfile_parser.sources.first
+
         [
           Bundler::EndpointSpecification.new(
             'bundler-audit', '0.5.0', 'ruby', nil,
@@ -56,7 +52,6 @@ RSpec.describe Bundix::Gemset::Builder do
           )
         ].tap { _1.each { |spec| spec.source = rubygems } }
       end
-      let(:rubygems) { builder.lockfile_parser.sources.first }
 
       let :ruby_platform_gems do
         {
@@ -67,7 +62,6 @@ RSpec.describe Bundix::Gemset::Builder do
               remotes: ['https://rubygems.org'],
               sha256: '1gr7k6m9fda7m66irxzydm8v9xbmlryjj65cagwm1zyi5f317srb'
             },
-            groups: ['default'],
             dependencies: ['thor']
           },
           'thor' => {
@@ -76,8 +70,7 @@ RSpec.describe Bundix::Gemset::Builder do
               type: 'gem',
               remotes: ['https://rubygems.org'],
               sha256: '01n5dv9kql60m6a00zc0r66jvaxx98qhdny3klyj0p3w34pad2ns'
-            },
-            groups: ['default']
+            }
           }
         }
       end

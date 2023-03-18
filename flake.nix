@@ -14,24 +14,22 @@
           src = ./.;
           lib = final.callPackage ./nix {};
           version = lib.extractBundixVersion ./lib/bundix/version.rb;
-
-          gems = with final; bundixEnv {
-            inherit pname ruby system;
-            name = "${pname}-${version}-bundler-env";
-            gemdir = src;
-          };
-
+        in {
           bundix = final.callPackage ./nix/derivation.nix {
-            inherit gems pname src version;
+            inherit pname src version;
             runtimeInputs = with final; [
               git
               nix
               nix-prefetch-git
             ];
+            gems = with final; bundixEnv {
+              inherit pname ruby system;
+              name = "${pname}-${version}-bundler-env";
+              groups = ["default"];
+              gemdir = ./.;
+            };
           };
-        in {
-          inherit bundix;
-          bundixEnv = args: final.bundlerEnv (args // lib.platformGemset args);
+          bundixEnv = args: final.callPackage ./nix/bundixEnv.nix args;
         };
     } //
     flake-utils.lib.eachDefaultSystem (system:
@@ -46,9 +44,16 @@
           bundixEnv = pkgs.bundixEnv;
         };
 
-        devShell = pkgs.mkShell {
-          buildInputs = with pkgs.bundix; [gems gems.ruby];
-        };
+        devShell =
+          let
+            dev-gems = with pkgs.bundix; gems.override {
+              name = "${pname}-${version}-bundler-env-development";
+              groups = null;
+            };
+          in pkgs.mkShell {
+            buildInputs = with dev-gems; [basicEnv wrappedRuby];
+            shellHook = "export BUNDIX_DEVELOPMENT=1";
+          };
       }
     );
 }

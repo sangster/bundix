@@ -4,10 +4,11 @@ module Bundix
   module Nix
     # {Serializer Serializes} a Bundler spec into nix format.
     class BundlerSpecification
-      attr_reader :engines, :spec
+      attr_reader :engines, :groups, :spec
 
-      def initialize(spec, engines: RubyEngines.defaults)
+      def initialize(spec, groups: nil, engines: RubyEngines.defaults)
         @spec = spec
+        @groups = compact_groups(groups)
         @engines = engines
       end
 
@@ -31,6 +32,13 @@ module Bundix
 
       private
 
+      def compact_groups(groups)
+        groups = Array(groups).map(&:to_sym)
+        return nil if (groups - [:default]).empty?
+
+        groups
+      end
+
       def version
         [spec.version, (platform unless ruby_platform?)].compact.join('-')
       end
@@ -41,10 +49,6 @@ module Bundix
 
       def ruby_platform?
         platform == Gem::Platform::RUBY
-      end
-
-      def groups
-        spec.groups.empty? ? %w[default] : spec.groups
       end
 
       def engine

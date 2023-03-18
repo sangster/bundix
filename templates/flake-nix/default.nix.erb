@@ -18,11 +18,16 @@
 
       gems = pkgs.bundixEnv {
         inherit system;
-        name = "${pname}-${version}-bundler-env";
+        name = "${pname}-${version}-gems";
+        groups = ["default"];
         ruby = pkgs.<%= ruby %>;
+<% if gemdir %>
+        gemdir = <%= gemdir_path %>;
+<% else %>
         gemfile = <%= gemfile_path %>;
         lockfile = <%= lockfile_path %>;
         gemset = <%= gemset_path %>;
+<% end %>
       };
     in {
       packages.${system} = {
@@ -34,13 +39,12 @@
           installPhase = ''
             mkdir -p $out/bin
             cat << EOF > "$out/bin/${pname}"
-            #!/bin/sh -e
+            #!/bin/sh
             exec $ruby/bin/ruby << RUBY
             require 'bundler'
-            puts "Bundled rubygems:"
-            Bundler.setup.gems.map(&:name).sort.each do |gem|
-              puts " - #{gem}"
-            end
+            Bundler.setup(:default)
+            puts "Loaded gems:"
+            Gem.loaded_specs.each_key { |gem| puts " - #{gem}" }
             RUBY
             EOF
             chmod +x "$out/bin/${pname}"
@@ -53,8 +57,14 @@
         bundix = { type = "app"; program = "${pkgs.bundix}/bin/bundix"; };
       };
 
-      devShell.${system} = pkgs.mkShell {
-        buildInputs = [gems gems.wrappedRuby];
-      };
+      devShell.${system} =
+        let
+          dev-gems = with pkgs.bundix; gems.override {
+            name = "${pname}-${version}-development-gems";
+            groups = ["development"];
+          };
+        in pkgs.mkShell {
+          buildInputs = with dev-gems; [basicEnv wrappedRuby pkgs.bundix];
+        };
     };
 }

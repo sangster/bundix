@@ -22,32 +22,29 @@ module Bundix
         end
       end
 
-      attr_reader :engines, :gemfile, :groups, :lockfile
+      attr_reader :definition, :engines, :groups
 
       class << self
         def call(...)
           build(...).call
         end
 
-        def build(bundler_env_format: nil, **kwargs)
+        def build(*args, bundler_env_format: nil, **kwargs)
           if bundler_env_format
-            EnvFormatBuilder.new(bundler_env_format, **kwargs)
+            EnvFormatBuilder.new(bundler_env_format, *args, **kwargs)
           else
-            new(**kwargs)
+            new(*args, **kwargs)
           end
         end
       end
 
-      # @param gemfile [#to_s] The path to the +Gemfile+.
-      # @param lockfile [#to_s] The path to the +Gemfile.lock+.
-      # @param groups [Array<#to_sym>] The Bundler groups to include.
+      # @param groups [nil, Array<#to_sym>] The Bundler groups to include, or
+      #   +nil+ for all.
       # @param engines [RubyEngines]
       # @see https://bundler.io/guides/groups.html
-      def initialize(gemfile:, lockfile:, groups: [:default],
-                     engines: RubyEngines.defaults)
-        @gemfile = gemfile
-        @lockfile = lockfile
-        @groups = groups
+      def initialize(definition, groups: nil, engines: RubyEngines.defaults)
+        @definition = definition
+        @groups = compact_groups(groups)
         @engines = engines
       end
 
@@ -69,15 +66,16 @@ module Bundix
           PlatformGems.new(definition, all_lockfile_specs, groups: groups).call
       end
 
-      def definition
-        @definition ||= Bundler::Definition.build(gemfile, lockfile, false)
-      end
-
       def lockfile_parser
         definition.locked_gems
       end
 
       private
+
+      def compact_groups(groups)
+        groups ||= definition.groups
+        (groups.map(&:to_sym) + [:default]).uniq
+      end
 
       def all_lockfile_specs
         specs = lockfile_sources.flat_map { |source| source_specs(source).to_a }

@@ -28,7 +28,7 @@ stdenv.mkDerivation {
     longDescription = ''
       This is a tool that converts Gemfile.lock files to nix expressions.
 
-      The output is then usable by the bundlerEnv derivation to list all the
+      The output is then usable by the bundixEnv derivation to list all the
       dependencies of a ruby package.
     '';
     homepage = "https://github.com/sangster/bundix";

@@ -8,11 +8,12 @@ module Bundix
 
       # @param definition [Bundler::Definition]
       # @param specs [#to_a] A list of Bundler specs.
-      # @param groups [Array<#to_sym>] The list of Bundler groups to include.
-      def initialize(definition, specs, groups: [:default])
+      # @param groups [nil,Array<#to_sym>] The list of Bundler groups to
+      #   include, or +nil+ for all.
+      def initialize(definition, specs, groups: nil)
         @definition = definition
         @specs = Bundler::SpecSet.new(specs.to_a)
-        @groups = groups
+        @groups = groups || definition.groups
       end
 
       def call
@@ -23,7 +24,9 @@ module Bundix
 
       def platform_gemsets
         new_gemset_hash.tap do |gemsets|
-          all_spec_dependencies.each { |spec| gemset_add(gemsets, spec) }
+          all_spec_dependencies.each do |spec|
+            gemset_add(gemsets, spec, group_specs[spec_id(spec)])
+          end
         end
       end
 
@@ -45,7 +48,21 @@ module Bundix
       end
 
       def dependencies
-        @dependencies ||= definition.dependencies_for(groups)
+        groups.flat_map { group_dependencies[_1] }
+      end
+
+      def all_dependencies
+        @all_dependencies ||=
+          [
+            dependencies,
+            definition.resolve.flat_map(&:dependencies)
+          ].flatten.sort.uniq
+      end
+
+      def group_dependencies
+        @group_dependencies ||= groups.to_h do |group|
+          [group.to_sym, definition.dependencies_for([group.to_sym])]
+        end
       end
 
       def gem_platforms
@@ -53,11 +70,38 @@ module Bundix
           definition.platforms.map { |plat| Gem::Platform.new(plat) }
       end
 
-      def gemset_add(gemsets, spec)
+      def gemset_add(gemsets, spec, groups)
         prev = gemsets.dig(spec.platform.to_s, spec.name, spec.version)
         raise "version mismatch: #{prev}, #{spec}" if prev && prev.version != spec.version
 
-        gemsets[spec.platform.to_s][spec.name] = Nix::BundlerSpecification.new(spec)
+        gemsets[spec.platform.to_s][spec.name] =
+          Nix::BundlerSpecification.new(spec, groups: groups)
+      end
+
+      def group_specs
+        @group_specs ||=
+          Hash.new { |h1, spec| h1[spec] = [] }
+              .tap { |hash| add_dependencies_to_groups(hash, dependencies) }
+      end
+
+      def add_spec_to_groups(hash, spec, groups)
+        hash[spec_id(spec)] = groups
+        add_dependencies_to_groups(hash, spec.dependencies, groups: groups)
+      end
+
+      def add_dependencies_to_groups(hash, deps, groups: nil)
+        deps.each do |dep|
+          next if dep.name == 'bundler'
+
+          spec = definition.resolve.find { dep.matches_spec?(_1) }
+          raise "No spec for #{dep}" unless spec
+
+          add_spec_to_groups(hash, spec, groups || dep.groups)
+        end
+      end
+
+      def spec_id(spec)
+        [spec.name, spec.version, spec.platform]
       end
     end
   end

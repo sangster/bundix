@@ -7,20 +7,26 @@ module Bundix
   module BundlerProxy
     # Executes +bundle lock+ or +bundle lock --update+.
     class Lock < Base
-      attr_reader :gemfile, :ignore_config, :lockfile, :update
-      attr_accessor :add_platforms, :remove_platforms
+      attr_reader :definition, :ignore_config, :set_platforms, :update
 
-      def initialize(gemfile, lockfile, update: false, ignore_config: false,
+      def initialize(definition, update: false, ignore_config: false, # rubocop:disable Metrics/ParameterLists
+                     add_platforms: [], remove_platforms: [], set_platforms: nil,
                      **kwargs)
         super(**kwargs)
-        @gemfile = gemfile
-        @lockfile = lockfile
+        @definition = definition
         @update = update
         @ignore_config = ignore_config
+        @add_platforms = add_platforms
+        @remove_platforms = remove_platforms
+        @set_platforms = set_platforms || current_platforms
+      end
 
-        # TODO: these should be specified via CLI args
-        @add_platforms = []
-        @remove_platforms = []
+      def add_platforms
+        @add_platforms + (set_platforms - current_platforms)
+      end
+
+      def remove_platforms
+        @remove_platforms + (current_platforms - set_platforms)
       end
 
       protected
@@ -44,9 +50,17 @@ module Bundix
         Bundler::CLI::Lock
           .new('remove-platform' => remove_platforms,
                'add-platform' => add_platforms,
-               lockfile: lockfile,
+               lockfile: definition.lockfile,
                gemfile: gemfile,
                update: update)
+      end
+
+      def current_platforms
+        @current_platforms ||= definition.platforms.map(&:to_s)
+      end
+
+      def gemfile
+        definition.gemfiles.first
       end
     end
   end

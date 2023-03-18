@@ -1,8 +1,7 @@
 { callPackage }:
 
-let
+{
+  bundlerFiles = callPackage ./bundlerFiles.nix {};
   extractBundixVersion = callPackage ./extractBundixVersion.nix {};
-  platformGemset = callPackage ./platformGemset.nix {};
-in {
-  inherit extractBundixVersion platformGemset;
+  toBundlerEnvArgs = callPackage ./toBundlerEnvArgs.nix {};
 }

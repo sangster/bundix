@@ -3,5 +3,6 @@
 
 require 'bundler'
 Bundler.require(:default)
+Bundler.require(:development) if ENV.key?('BUNDIX_DEVELOPMENT')
 
 Bundix::CommandLine.call

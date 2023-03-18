@@ -1,7 +1,9 @@
 # frozen_string_literal: true
 
-RSpec.shared_context 'with gemset' do |options|
-  let(:gemset_builder) { Bundix::Gemset::Builder.new(**options) }
+RSpec.shared_context 'with gemset' do |gemdir|
+  include_context 'with bundle', gemdir
+
+  let(:gemset_builder) { Bundix::Gemset::Builder.new(definition) }
   let(:gemset) { gemset_builder.call }
   let :gemset_sources do
     gemset_builder.definition

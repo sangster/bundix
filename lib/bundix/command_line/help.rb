@@ -26,6 +26,8 @@ module Bundix
         # Output options
         '--gemset=PATH' =>
           "destination path of the gemset.nix #{default :gemset}",
+        '--groups=GROUPS' =>
+          'bundler groups to include in the gemset.nix (default: all groups)',
         '--bundler-env[=PLATFORM]' => 'export a nixpkgs#bundlerEnv compatible' \
                                       "gemset #{default :ruby_platform}",
         '--skip-gemset' => 'do not generate gemset',
@@ -39,13 +41,17 @@ module Bundix
           "package .gem files into directory #{default :bundle_cache_path}",
         '--ignore-bundler-configs' => 'ignores Bundler config files',
 
+        '--add-platforms=PLATFORMS' => 'add platforms to the lockfile (implies --lock)',
+        '--remove-platforms=PLATFORMS' => 'remove platforms from the lockfile (implies --lock)',
+        '--platforms=PLATFORMS' => 'replace all platforms in the lockfile (implies --lock)',
+
         # flake.nix options
         '--init[=RUBY_DERIVATION]' => "initialize a new flake.nix for 'nix " \
                                       "develop' (won't overwrite old ones)",
         '--init-template=TEMPLATE' =>
           "the flake.nix template to use. may be #{template_list}, or a " \
           'filename (default: default)',
-        '--init-project=NAME' =>
+        '--project-name=NAME' =>
           "project name to use with --init #{default :project}",
 
         # Environment options

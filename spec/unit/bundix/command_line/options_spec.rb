@@ -58,14 +58,14 @@ RSpec.describe Bundix::CommandLine::Options do
         context 'with no value' do
           let(:argv) { %w[--update] }
 
-          it { expect(options[:update_lock]).to be true }
+          it { expect(options[:update]).to be true }
         end
 
         context 'with a list of gems' do
           let(:argv) { %w[--update=1,2,3] }
 
           it do
-            expect(options[:update_lock]).to contain_exactly '1', '2', '3'
+            expect(options[:update]).to contain_exactly '1', '2', '3'
           end
         end
       end

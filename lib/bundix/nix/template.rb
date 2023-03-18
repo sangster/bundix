@@ -24,7 +24,7 @@ module Bundix
       private
 
       def erb_template
-        ERB.new(path.read)
+        ERB.new(path.read, trim_mode: '<>')
       end
 
       def erb_context(**options)

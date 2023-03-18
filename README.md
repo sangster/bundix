@@ -1,93 +1,137 @@
 # About
-
 Bundix makes it easy to package your [Bundler](http://bundler.io/)-enabled Ruby
-applications with the [Nix](http://nixos.org/nix/) package manager.
+applications with the [Nix](https://nixos.org/download.html) package manager.
 
-## Installation
+# Basic Usage
 
-Installing from this repo:
+**Note**: See [./guides/getting-started.md](Getting Started) for a more detailed
+description of setting up a new ruby project.
 
-    nix-env -iA bundix
+> Please note that in order to actually use this gem you must have Nix installed.
+>
+> I recommend first reading the [nixpkgs manual entry for
+> Ruby](http://nixos.org/nixpkgs/manual/#sec-language-ruby) as this README might
+> become outdated, it's a short read right now, so you won't regret it.
 
-Please note that in order to actually use this gem you must have Nix installed.
+To use Bundix, all your project needs is a `Gemfile` describing your project's
+ruby dependencies. If you already have a `Gemfile.lock`, Bundix will use it, but
+it will generate one if you don't.
 
-## Basic Usage
+``` sh
+$ nix run github:sangster/bundix
+$ nix run nixpkgs#git -- add gemset.nix
+```
 
-I recommend first reading the
-[nixpkgs manual entry for Ruby](http://nixos.org/nixpkgs/manual/#sec-language-ruby)
-as this README might become outdated, it's a short read right now, so you won't
-regret it.
+## Adding Bundix to your `flake.nix`
 
-1. Making a gemset.nix
+To integrate Bundix into your Nix package, you'll need to make 3 changes:
 
-   Change to your project's directory and run this:
+### 1. Import Bundix's overlay
 
-       bundix -l
+For example, if you have a `import nixpkgs` line in your flake, add a `overlays
+= [ ...];` attribute to it. For example:
 
-   This will generate a `gemset.nix` file that you then can use in your
-   `bundlerEnv` expression like this:
+``` nix
+{
+  inputs.bundix.url = github:sangster/bundix;
 
-2. Using `nix-shell`
+  outputs = { bundix, ... }:
+    let
+      pkgs = import nixpkgs {
+        system = "x86_64-linux";
+        overlays = [bundix.overlays.default];
+      };
+    in { ... }
+}
+```
 
-   To try your package in `nix-shell`, create a `default.nix` like this:
+### 2. Create the gem bundle with Bundix
 
-   ```nix
-   with (import <nixpkgs> {});
-   let
-     gems = bundlerEnv {
-       name = "your-package";
-       inherit ruby;
-       gemdir = ./.;
-     };
-   in stdenv.mkDerivation {
-     name = "your-package";
-     buildInputs = [gems ruby];
-   }
-   ```
+Now we use the `pkgs.bundixEnv` nix function to convert your project's
+`gemset.nix` into a nix derivation that will be used as a runtime dependency for
+your own ruby package. Here is an example usage:
 
-   and then simply run `nix-shell`.
+``` nix
+gems = pkgs.bundixEnv {
+  name = "bundix-project-gems";
+  ruby = pkgs.ruby;
+  gemdir = ./.;
+  platform = "x86_64-linux";
+};
+```
 
-3. Proper packages
+`bundixEnv` accepts the same attribute arguments as
+[bundlerEnv](https://github.com/NixOS/nixpkgs/blob/48e4e2a1/pkgs/development/ruby-modules/bundler-env/default.nix),
+with the addition of two:
 
-   To make a package for nixpkgs, you can try something like this:
+ - `platform`: Specifies the gem platform we want to build this package for.
+ - `system`: As an alternative to `platform`, you can provide your nix `system`
+   and `bundixEnv` will attempt to figure out the correct `platform` from that.
 
-   ```nix
-   { stdenv, bundlerEnv, ruby }:
-   let
-     gems = bundlerEnv {
-       name = "your-package";
-       inherit ruby;
-       gemdir  = ./.;
-     };
-   in stdenv.mkDerivation {
-     name = "your-package";
-     src = ./.;
-     buildInputs = [gems ruby];
-     installPhase = ''
-       mkdir -p $out
-       cp -r $src $out
-     '';
-   }
-   ```
+### 3. Use the gem bundle in your app
 
-### Command-line Flags
+Finally, you need to integrate your new gem bundle into your package. An easy
+method is to use its `wrappedRuby` package as the `ruby` used to execute your
+ruby code.
+
+``` nix
+pkgs.stdenv.mkDerivation {
+  phases = "installPhase";
+  installPhase = ''
+    mkdir -p $out/bin
+    cat << EOF > "$out/bin/my-app"
+    #!/bin/sh
+    exec ${gems.wrappedRuby}/bin/ruby ${./my-ruby-script.rb}
+    EOF
+    chmod +x "$out/bin/my-app"
+  '';
+};
+```
+
+### Generate an example `flake.nix`
+
+If your project doesn't have a +flake.nix+ yet, Bundix can make an example one
+for you:
+
+``` sh
+$ nix run github:sangster/bundix -- --init
+```
+
+## Command-line Flags
 
 ```
 $ nix run github:sangster/bundix -- --help
 Usage: bundix [options]
+    -q, --quiet                      only output errors
+
+File options:
+        --gemfile=PATH               path to the existing Gemfile (default: ./Gemfile)
+        --lockfile=PATH              path to the Gemfile.lock (default: ./Gemfile.lock)
+
+Output options:
+        --gemset=PATH                destination path of the gemset.nix (default: ./gemset.nix)
+    -g, --groups=GROUPS              bundler groups to include in the gemset.nix (default: all groups)
+        --bundler-env[=PLATFORM]     export a nixpkgs#bundlerEnv compatiblegemset (default: ruby)
+        --skip-gemset                do not generate gemset
+
+Bundler options:
+    -l, --lock                       lock the gemfile gems into the lockfile
+    -u, --update[=GEMS]              update the lockfile with new versions of the specified gems, or each one, if none given (implies --lock)
+    -a, --add-platforms=PLATFORMS    add platforms to the lockfile (implies --lock)
+    -r, --remove-platforms=PLATFORMS remove platforms from the lockfile (implies --lock)
+    -p, --platforms=PLATFORMS        replace all platforms in the lockfile (implies --lock)
+    -c, --bundle-cache[=DIR]         package .gem files into directory (default: ./vendor/bundle)
+        --ignore-bundler-configs     ignores Bundler config files
+
+flake.nix options:
     -i, --init[=RUBY_DERIVATION]     initialize a new flake.nix for 'nix develop' (won't overwrite old ones)
     -t, --init-template=TEMPLATE     the flake.nix template to use. may be 'default', 'flake-utils', or a filename (default: default)
-    -p, --init-project=NAME          project name to use with --init (default: moo)
-        --gemset=PATH                path to the gemset.nix (default: ./gemset.nix)
-        --lockfile=PATH              path to the Gemfile.lock (default: ./Gemfile.lock)
-        --gemfile=PATH               path to the Gemfile (default: ./Gemfile)
-        --skip-gemset                do not generate gemset
-    -q, --quiet                      only output errors
-    -l, --bundle-lock                generate Gemfile.lock first
-    -u, --bundle-update[=GEMS]       ignores the existing lockfile. Resolve then updates lockfile. Taking a list of gems or updating all gems if no list is given (implies --bundle-lock)
-    -c, --bundle-cache[=DIRECTORY]   package .gem files into directory (default: ./vendor/bundle)
+    -n, --project-name=NAME          project name to use with --init (default: bundix)
+
+Environment options:
     -v, --version                    show the version of bundix
-        --env                        show the environment in bundix
+        --env                        show the environment in Bundix
+        --platform                   show the gem platform of this host
 ```
 
 ## How & Why

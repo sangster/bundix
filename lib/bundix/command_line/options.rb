@@ -20,8 +20,7 @@ module Bundix
 
       def make_options
         logging_options
-        input_options
-        output_options
+        file_options
         bundler_options
         init_options
         environment_options
@@ -31,28 +30,27 @@ module Bundix
         on('-q', '--quiet') { options[:quiet] = true }
       end
 
-      def input_options
-        separator("\nInput options:")
+      def file_options # rubocop:disable Metrics/AbcSize
+        separator("\nFile options:")
 
         on('--gemfile=PATH') { options[:gemfile] = path(_1) }
         on('--lockfile=PATH') { options[:lockfile] = path(_1) }
-      end
-
-      def output_options
-        separator("\nOutput options:")
-
         on('--gemset=PATH') { options[:gemset] = path(_1) }
+        on('-g', '--groups=GROUPS', Array) { options[:groups] = _1 }
         on '--bundler-env[=PLATFORM]' do |platform|
           options[:bundler_env_format] = platform || options[:ruby_platform]
         end
         on('--skip-gemset') { options[:skip_gemset] = true }
       end
 
-      def bundler_options
+      def bundler_options # rubocop:disable Metrics/AbcSize
         separator("\nBundler options:")
 
         on('-l', '--lock') { options[:lock] = true }
-        on('-u', '--update[=GEMS]', Array) { options[:update_lock] = _1 || true }
+        on('-u', '--update[=GEMS]', Array) { options[:update] = _1 || true }
+        on('-a', '--add-platforms=PLATFORMS', Array) { options[:add_platforms] = _1 }
+        on('-r', '--remove-platforms=PLATFORMS', Array) { options[:remove_platforms] = _1 }
+        on('-p', '--platforms=PLATFORMS', Array) { options[:set_platforms] = _1 }
         on '-c', '--bundle-cache[=DIR]' do |dir|
           options[:cache] = path(dir, default: :bundle_cache_path)
         end
@@ -68,7 +66,7 @@ module Bundix
         on '-t', '--init-template=TEMPLATE' do |template|
           options[:init_template] = parse_template(template)
         end
-        on('-p', '--init-project=NAME') { options[:project] = _1 }
+        on('-n', '--project-name=NAME') { options[:project] = _1 }
       end
 
       def environment_options

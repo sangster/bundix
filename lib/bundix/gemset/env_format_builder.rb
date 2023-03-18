@@ -8,9 +8,10 @@ module Bundix
       attr_reader :platform
 
       # @param platform [String] The platform of the gems to include.
+      # @param args [Array] See {Builder#new}.
       # @param kwargs [Hash] See {Builder#new}.
-      def initialize(platform, **kwargs)
-        super(**kwargs)
+      def initialize(platform, *args, **kwargs)
+        super(*args, **kwargs)
         @platform = platform
       end
 

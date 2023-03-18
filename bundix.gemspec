@@ -9,10 +9,8 @@ Gem::Specification.new do |s|
   s.homepage    = 'https://github.com/sangster/bundix'
   s.summary     = 'Creates Nix packages from Gemfiles.'
   s.description = 'Creates Nix packages from Gemfiles.'
-  s.authors     = ["Michael 'manveru' Fellinger"]
-  s.files       = Dir['bin/*'] +
-                  Dir['lib/**/*.{rb,nix,erb}'] +
-                  Dir['template/**/*.{rb,nix,erb}']
+  s.authors     = ["Michael 'manveru' Fellinger", 'Jon Sangster']
+  s.files       = Dir['bin/*'] + Dir['lib/**/*.rb'] + Dir['template/**/*.erb']
   s.bindir      = 'bin'
   s.executables = ['bundix']
   s.required_ruby_version = '>= 2.7.0'

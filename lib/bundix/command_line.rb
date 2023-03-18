@@ -39,13 +39,23 @@ module Bundix
     end
 
     def handle_bundle_lock
-      bundle_lock if options[:lock] || options[:update_lock] || lockfile_stale?
+      bundle_lock if lock_option? || lockfile_stale?
     end
 
     def bundle_lock
       BundlerProxy::Lock
-        .new(options[:gemfile], options[:lockfile], update: options[:update_lock])
+        .new(definition, **options.slice(*%i[add_platforms remove_platforms
+                                             set_platforms update]))
         .call
+    end
+
+    def definition
+      Bundler::Definition.build(options[:gemfile], options[:lockfile], false)
+    end
+
+    def lock_option?
+      %i[add_platforms lock remove_platforms set_platforms update]
+        .any? { options[_1] }
     end
 
     def lockfile_stale?(lockfile: options[:lockfile], gemfile: options[:gemfile])
@@ -55,7 +65,7 @@ module Bundix
     def handle_bundle_cache
       return unless options[:cache]
 
-      BundlerProxy::Cache.new(options[:cache], options[:gemfile]).call
+      BundlerProxy::Cache.new(**options.slice(:cache, :gemfile)).call
     end
 
     def handle_init
@@ -71,12 +81,24 @@ module Bundix
 
     def flake_nix_string
       Nix::Template.new(options[:init_template])
-                   .call(ruby: options[:init], **options)
+                   .call(ruby: options[:init], gemdir: gemdir, **options)
+    end
+
+    def gemdir
+      return @gemdir if defined? @gemdir
+
+      @gemdir = begin
+        paths = options.slice(:gemfile, :lockfile, :gemset).values.map { Pathname(_1) }
+        return nil unless paths.map { _1.basename.to_s } == %w[Gemfile Gemfile.lock gemset.nix]
+
+        dirs = paths.map(&:dirname).uniq
+        dirs.size == 1 ? dirs.first : nil
+      end
     end
 
     def build_gemset
       Gemset::Builder
-        .call(**options.slice(:gemfile, :lockfile, :bundler_env_format))
+        .call(definition, **options.slice(*%i[groups bundler_env_format]))
     end
 
     def bundler_settings
