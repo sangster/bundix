@@ -85,12 +85,15 @@ BUNDLED WITH
    2.4.6
 ```
 
+Typically you won't ever edit, or even look at, this file, but here's a quick
+summary of its major sections:
+
 #### GEM
 
  The `GEM` section summarises all the gems that need to be downloaded from
-`rubygems.org` to build this project. Note that although our `Gemfile`only
-listed 2 gems, this section includes 3. `racc` was pulled in as a transitive
-dependency of `nokogiri`.
+`rubygems.org` to build this project. Even though our `Gemfile`only listed 2
+gems, this section includes 3. `racc` was pulled in as a transitive dependency
+of `nokogiri`.
 
 #### PLATFORMS
 
@@ -103,29 +106,32 @@ local machine is used.[^platform]
              may have something different here.
 
 You probably noticed that the `nokogiri` entry under `GEMS` lists the version as
-`1.14.2-x86_64-linux`, even though your `Gemfile` specified that we need version
-`1.14.2`. This is because `nokogiri` provides a special version of this gem
-specifically for this `Gemfile.lock`'s platform. `Gemfile.lock` *only* lists
-`x86_64-linux` as a supported platform, so it's acceptable to use a
+`1.14.2-x86_64-linux`, even though the `Gemfile` specified that version `1.14.2`
+is needed. This is because `nokogiri` provides a special version of this gem
+specifically for this `Gemfile.lock`'s platform[^nokogiri]. `Gemfile.lock`
+*only* lists `x86_64-linux` as a supported platform, so it's acceptable to use a
 `x86_64-linux`-only version of `nokogiri`.
 
-If you're building a nix derivation that you want to run on multiple kinds of
-platforms, you can use the special, `ruby` platform. This platform indicates that
-your code doesn't contain any platform-specific code and can hypothetically run
-on any platform.
+[^nokogiri]: Nokogiri provides versions for other platforms too. You can see a
+             list on their [RubyGems page](https://rubygems.org/gems/nokogiri/versions).
+
+If you're building a nix derivation that you want to run on all ruby platforms,
+you can use the special, `ruby` platform. This platform indicates that your code
+doesn't contain any platform-specific code and can hypothetically run on any
+platform.
 
 You can add the `ruby` platform to your `Gemfile.lock` with the
 `--add-platforms=` flag:
 
 ```sh
-$ nix run ~/code/sangster/bundix# -- --add-platforms=ruby
+$ nix run github:sangster/bundix -- --add-platforms=ruby
 Fetching gem metadata from https://rubygems.org/.......
 Resolving dependencies...
 Writing lockfile to /tmp/bundix-project/Gemfile.lock
 ```
 
 By examining the updated `Gemfile.lock`, you'll see that the `PLATFORMS` section
-has a second entry, and more gems where added to the `GEMS` section:
+has a second entry, and a few more gems added to the `GEMS` section:
 
 ```
 GEM
@@ -145,10 +151,10 @@ PLATFORMS
   x86_64-linux
 ```
 
-There are now two `nokogiri` entries: one particular to the `x86_64-linux`
-platform and a generic ruby one (with no platform suffix). Take note that the
-pury-ruby implementation of `nokogiri` has an extra transitive dependency:
-`mini_portile2`.
+There are now two `nokogiri` entries: one for the `x86_64-linux` platform and a
+generic ruby one (with no platform suffix) for every other platform. Take note
+that the pure-ruby implementation of `nokogiri` has an extra transitive
+dependency: `mini_portile2`.
 
 #### DEPENDENCIES
 
