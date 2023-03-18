@@ -1,5 +1,8 @@
-.bundle/
-*.gem
-tmp
-result
+/*.gem
+/.bundle/
+/.yardoc/
+/coverage/
+/doc/
+/result
+/tmp/
 /vendor/

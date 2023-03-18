@@ -7,64 +7,53 @@
   };
 
   outputs = { self, nixpkgs, flake-utils }:
+    {
+      overlays.default = final: prev:
+        let
+          pname = "bundix";
+          src = ./.;
+          lib = final.callPackage ./nix {};
+          version = lib.extractBundixVersion ./lib/bundix/version.rb;
+        in {
+          bundix = final.callPackage ./nix/derivation.nix {
+            inherit pname src version;
+            runtimeInputs = with final; [
+              git
+              nix
+              nix-prefetch-git
+            ];
+            gems = with final; bundixEnv {
+              inherit pname ruby system;
+              name = "${pname}-${version}-bundler-env";
+              groups = ["default"];
+              gemdir = ./.;
+            };
+          };
+          bundixEnv = args: final.callPackage ./nix/bundixEnv.nix args;
+        };
+    } //
     flake-utils.lib.eachDefaultSystem (system:
       let
-        name = "bundix";
-        version = extract-bundix-version ./lib/bundix/version.rb;
-        pkgs = import nixpkgs { inherit system; };
-
-        gems = with pkgs; bundlerEnv {
-          inherit name ruby;
-          gemdir = ./.;
-          extraConfigPaths = [
-            "${./.}/lib" # .gemspec file references `Bundix::Version`
-            "${./.}/${name}.gemspec"
-          ];
+        pkgs = import nixpkgs {
+          inherit system;
+          overlays = [self.overlays.default];
         };
-
-        extract-bundix-version = path: with builtins;
-          let
-            pattern = ".*VERSION[[:space:]]*=[[:space:]]['\"]([^'\"]+)['\"].*";
-            captures = match pattern (readFile path);
-            version-list = if isNull captures || length captures == 0
-                           then [upstream-package.version]
-                           else captures;
-          in elemAt version-list 0;
-
-        upstream-package = import ./default.nix {
-          inherit pkgs;
-          inherit (gems) ruby;
-        };
-        bundled-package = upstream-package.overrideAttrs (_old: {
-          inherit name version;
-
-          # See https://nixos.wiki/wiki/Packaging/Ruby#Build_default.nix
-          installPhase = ''
-            mkdir -p $out/{bin,share/${name}}
-            cp -r $src/{bin,lib,template} $out/share/${name}
-
-            bin=$out/bin/${name}
-            cat > $bin <<EOF
-            #!/bin/sh -e
-            exec ${gems}/bin/bundle exec \
-              ${gems.ruby}/bin/ruby \
-              $out/share/${name}/bin/${name} "\$@"
-            EOF
-            chmod +x $bin
-          '';
-        });
       in {
         packages = {
-          default = bundled-package;
-          gems = gems;
+          default = pkgs.bundix;
+          bundixEnv = pkgs.bundixEnv;
         };
 
-        devShell = pkgs.mkShell {
-          buildInputs = [
-            gems
-            gems.ruby
-          ];
-        };
+        devShell =
+          let
+            dev-gems = with pkgs.bundix; gems.override {
+              name = "${pname}-${version}-bundler-env-development";
+              groups = null;
+            };
+          in pkgs.mkShell {
+            buildInputs = with dev-gems; [basicEnv wrappedRuby];
+            shellHook = "export BUNDIX_DEVELOPMENT=1";
+          };
       }
     );
 }

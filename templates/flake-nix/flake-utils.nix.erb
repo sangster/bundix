@@ -1,0 +1,70 @@
+{
+  description = "<%= project %>";
+
+  inputs = {
+    nixpkgs.url = github:NixOS/nixpkgs;
+    flake-utils.url = github:numtide/flake-utils;
+    bundix.url = github:sangster/bundix;
+  };
+
+  outputs = { self, nixpkgs, flake-utils, bundix }:
+    flake-utils.lib.eachDefaultSystem (system:
+      let
+        pname = "<%= project %>";
+        version = "0.0.1";
+        pkgs = import nixpkgs {
+          inherit system;
+          overlays = [bundix.overlays.default];
+        };
+
+        gems = pkgs.bundixEnv {
+          inherit system;
+          name = "${pname}-${version}-bundler-env";
+          groups = ["default"];
+          ruby = pkgs.<%= ruby %>;
+<% if gemdir %>
+          gemdir = <%= gemdir_path %>;
+<% else %>
+          gemfile = <%= gemfile_path %>;
+          lockfile = <%= lockfile_path %>;
+          gemset = <%= gemset_path %>;
+<% end %>
+        };
+      in {
+        packages = {
+          # Example package:
+          default = pkgs.stdenv.mkDerivation {
+            inherit gems pname version;
+            ruby = gems.wrappedRuby;
+            phases = "installPhase";
+            installPhase = ''
+              mkdir -p $out/bin
+              cat << EOF > "$out/bin/${pname}"
+              #!/bin/sh
+              exec $ruby/bin/ruby << RUBY
+              require 'bundler'
+              Bundler.setup(:default)
+              puts "Loaded gems:"
+              Gem.loaded_specs.each_key { |gem| puts " - #{gem}" }
+              RUBY
+              EOF
+              chmod +x "$out/bin/${pname}"
+            '';
+          };
+          bundled-gems = gems;
+        };
+
+        apps.bundix = flake-utils.lib.mkApp { drv = pkgs.bundix; };
+
+        devShell =
+          let
+            dev-gems = with pkgs.bundix; gems.override {
+              name = "${pname}-${version}-development-gems";
+              groups = ["development"];
+            };
+          in pkgs.mkShell {
+            buildInputs = with dev-gems; [basicEnv wrappedRuby pkgs.bundix];
+          };
+      }
+    );
+}
