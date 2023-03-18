@@ -20,9 +20,8 @@ step. But if you just want to try out Bundix with an example project, all you
 need to start is a `git` repo[^git] with a `Gemfile` that includes all your
 [favourite gems](https://rubygems.org/):
 
-[^git]:
-  If you prefer not to use `git`, Nix supports other version control
-  systems.
+[^git]: If you prefer not to use `git`, Nix supports other version control
+        systems.
 
 ```sh
 $ nix run nixpkgs#git -- init bundix-project
@@ -100,9 +99,8 @@ platforms](https://guides.rubygems.org/what-is-a-gem/) your project intends to
 support. By default, when creating a new `Gemfile.lock`, the platform of your
 local machine is used.[^platform]
 
-[^platform]:
-  I used a 64-bit linux machine in this example. Your `Gemfile.lock`
-  may have something different here.
+[^platform]: I used a 64-bit linux machine in this example. Your `Gemfile.lock`
+             may have something different here.
 
 You probably noticed that the `nokogiri` entry under `GEMS` lists the version as
 `1.14.2-x86_64-linux`, even though your `Gemfile` specified that we need version
@@ -172,9 +170,8 @@ own, so the `gemset.nix` file is necessary.
 
 The `gemset.nix` generated in your project should look like this[^platform2]:
 
-[^platform2]
-  Again, your file will certainly look different if your local platform is
-  something other than `x86_64-linux`.
+[^platform2]: Again, your file will certainly look different if your local
+              platform is something other than `x86_64-linux`.
 
 ``` nix
 {
@@ -405,9 +402,8 @@ Alternatively, if you prefer to use [bundle
 exec](https://bundler.io/v2.4/man/bundle-exec.1.html), you can do so with
 `$gems/bin/bundle exec COMMAND`.[^alternatively]
 
-[^alternatively]:
-  Or you can add them to your app's `$PATH`. Nix is provides a lot of options
-  for writing your package.
+[^alternatively]: Or you can add them to your app's `$PATH`. Nix is provides a
+                  lot of options for writing your package.
 
 ##### An example ruby script
 
